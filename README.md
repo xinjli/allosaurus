@@ -1,4 +1,4 @@
-# allosaurus_private
+# Allosaurus
 Allosaurus is a pretrained universal phone recognizer. 
 
 It can be used to recognize narrow phones in more than 2000 languages.
