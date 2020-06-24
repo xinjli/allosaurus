@@ -37,6 +37,9 @@ class Recognizer:
         self.config = config
 
     def recognize(self, filename, lang_id):
+        # recognize a single file
+
+        assert str(filename).endswith('.wav'), "only wave file is supported in allosaurus"
 
         # load wav audio
         audio = read_audio(filename)

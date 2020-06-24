@@ -2,6 +2,7 @@ from allosaurus.app import read_recognizer
 from allosaurus.list_model import get_all_models, resolve_model_name
 from allosaurus.download import download_model
 import argparse
+from pathlib import Path
 
 if __name__ == '__main__':
 

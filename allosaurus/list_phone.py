@@ -21,7 +21,7 @@ if __name__ == '__main__':
     if args.lang == 'ipa':
         print(list(inventory.unit.id_to_unit.values())[1:])
     else:
-        assert args.lang.lower() in inventory.lang_names, f'language {args.lang} is not supported. Please verify it is in the language list'
+        assert args.lang.lower() in inventory.lang_ids, f'language {args.lang} is not supported. Please verify it is in the language list'
 
         unit = inventory.get_mask(args.lang.lower()).target_unit
         print(list(unit.id_to_unit.values())[1:])

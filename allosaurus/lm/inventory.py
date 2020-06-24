@@ -8,6 +8,7 @@ class Inventory:
         self.model_path = model_path
 
         self.lang_names = []
+        self.lang_ids = []
 
         self.lang2phonefile = dict()
 
@@ -20,10 +21,12 @@ class Inventory:
         for lang in langs:
 
             lang_name = lang['LanguageName']
+            lang_id = lang['ISO6393']
             phone_text = lang['phonelists']
             self.lang_names.append(lang_name.lower())
+            self.lang_ids.append(lang_id.lower())
 
-            self.lang2phonefile[lang_name.lower()] = phone_text
+            self.lang2phonefile[lang_id.lower()] = phone_text
 
 
     def get_mask(self, lang_id=None, approximation=False):

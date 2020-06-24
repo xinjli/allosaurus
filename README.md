@@ -20,7 +20,7 @@ python setup.py install
 The basic usage is as follows:
  
 ```bash
-python -m allosaurus.run [--lang <language name>] [--model <model name>] [--device_id <gpu_id>] -i <audio>
+python -m allosaurus.run [--lang <language id>] [--model <model name>] [--device_id <gpu_id>] -i <audio>
 ```
 It will recognize the narrow phones in the audio file and print them in stdout.
 
@@ -36,24 +36,27 @@ Audio should be a single input audio file
 * We assume the audio is a mono-channel audio.
 
 ### Language
-The `lang` option is the language id. It is to specify the phone inventory you want to use.
+The `lang` option is the language id (ISO639-3), for example, english's id is `eng`. 
+It is to specify the phone inventory you want to use.
 The default option is `ipa` which tells the recognizer to use the the entire inventory (around 230 phones).
 
 Generally, specifying the language inventory can improve your recognition accuracy.
 
 You can check the full language list with the following command. The number of available languages is around 2000. 
+The (mostly) three letters on the left side is the language id you should use.
+
 ```bash
 python -m allosaurus.list_lang
 ```
 
 To check language's inventory you can use following command
 ```bash
-python -m allosaurus.list_phone [--lang <language name>]
+python -m allosaurus.list_phone [--lang <language id>]
 ```
 
 For example,
 ```bash
-# to get English phone inventory
+# to get English phone inventory (eng)
 # ['a', 'aː', 'b', 'd', 'd̠', 'e', 'eː', 'e̞', 'f', 'h', 'i', 'iː', 'j', 'k', 'kʰ', 'l', 'm', 'n', 'o', 'oː', 'p', 'pʰ', 'r', 's', 't', 'tʰ', 't̠', 'u', 'uː', 'v', 'w', 'x', 'z', 'æ', 'ð', 'øː', 'ŋ', 'ɐ', 'ɐː', 'ɑ', 'ɑː', 'ɒ', 'ɒː', 'ɔ', 'ɔː', 'ɘ', 'ə', 'əː', 'ɛ', 'ɛː', 'ɜː', 'ɡ', 'ɪ', 'ɪ̯', 'ɯ', 'ɵː', 'ɹ', 'ɻ', 'ʃ', 'ʉ', 'ʉː', 'ʊ', 'ʌ', 'ʍ', 'ʒ', 'ʔ', 'θ']
 python -m allosaurus.list_phone --lang english
 

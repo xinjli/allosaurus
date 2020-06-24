@@ -13,5 +13,5 @@ if __name__ == '__main__':
     inventory = Inventory(models[0])
 
     print("Available Languages")
-    for lang in inventory.lang_names:
-        print('-', lang)
+    for lang_id, lang_name in zip(inventory.lang_ids, inventory.lang_names):
+        print('- language id: ',lang_id, ' name: ', lang_name)
