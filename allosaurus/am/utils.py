@@ -2,12 +2,13 @@ import torch
 from collections import OrderedDict
 import numpy as np
 
-def torch_load(model, path, device_id):
+def torch_load(model, path, device_id, unit_mask=None):
     """Load torch model states.
 
     Args:
         path (str): Model path or snapshot file path to be loaded.
         model (torch.nn.Module): Torch model.
+        device_id (int): gpu id (-1 indicates cpu only)
 
     """
 
@@ -28,6 +29,28 @@ def torch_load(model, path, device_id):
         else:
             name = k
 
+        # remap the phone_layer for fine-tuning
+        # it will remap phone_layer.weight and phone_layer.bias
+        if k.startswith('phone_layer'):
+            if unit_mask is not None:
+                phone_size = len(unit_mask.target_unit)
+
+                if len(v.shape) == 2:
+                    # for weight
+
+                    hidden_size = v.shape[1]
+                    new_v = v.new(phone_size, hidden_size)
+                else:
+                    # for bias
+
+                    assert len(v.shape) == 1, 'phone_layer shape is either 2 or 1'
+                    new_v = v.new(phone_size)
+
+                for domain_phone_id, target_phone_id in unit_mask.unit_map.items():
+                    new_v[target_phone_id] = v[domain_phone_id]
+
+                v = new_v
+
         new_state_dict[name] = v
 
     if hasattr(model, 'module'):
@@ -39,6 +62,22 @@ def torch_load(model, path, device_id):
         model = model.cuda(device_id)
 
     del model_state_dict, new_state_dict
+
+
+def torch_save(model, path):
+    """Save torch model states.
+
+    Args:
+        path (str): Model path to be saved.
+        model (torch.nn.Module): Torch model.
+
+    """
+    path = str(path)
+    if hasattr(model, 'module'):
+        torch.save(model.module.state_dict(), path)
+    else:
+        torch.save(model.state_dict(), path)
+
 
 def apply_to_tensor(f, sample):
     if len(sample) == 0:

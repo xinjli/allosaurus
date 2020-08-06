@@ -3,3 +3,4 @@ numpy
 resampy
 panphon
 torch
+editdistance

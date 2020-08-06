@@ -4,7 +4,7 @@ from itertools import groupby
 
 class PhoneDecoder:
 
-    def __init__(self, model_path):
+    def __init__(self, model_path, inference_config):
         """
         This class is an util for decode both phones and words
 
@@ -13,6 +13,8 @@ class PhoneDecoder:
 
         # lm model path
         self.model_path = Path(model_path)
+
+        self.config = inference_config
 
         # create inventory
         self.inventory = Inventory(model_path)
@@ -31,7 +33,7 @@ class PhoneDecoder:
         # apply mask if lang_id specified, this is to restrict the output phones to the desired phone subset
         if lang_id and lang_id != 'ipa':
 
-            mask = self.inventory.get_mask(lang_id)
+            mask = self.inventory.get_mask(lang_id, approximation=self.config.approximate)
 
             logits = mask.mask_logits(logits)
 

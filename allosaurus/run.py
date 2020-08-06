@@ -1,8 +1,7 @@
 from allosaurus.app import read_recognizer
-from allosaurus.list_model import get_all_models, resolve_model_name
+from allosaurus.model import get_all_models, resolve_model_name
 from allosaurus.download import download_model
 import argparse
-from pathlib import Path
 
 if __name__ == '__main__':
 
@@ -11,6 +10,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--model', type=str, default='latest', help='specify which model to use. default is to use the latest local model')
     parser.add_argument('-l', '--lang', type=str,  default='ipa',help='specify which language inventory to use for recognition. default is to use all phone inventory')
     parser.add_argument('-i', '--input', type=str, required=True, help='specify your input wav file')
+    parser.add_argument('-a', '--approximate', type=bool, default=False, help='the phone inventory can still hardly to cover all phones. You can use turn on this flag to map missing phones to other similar phones to recognize. The similarity is measured with phonological features')
 
     args = parser.parse_args()
 

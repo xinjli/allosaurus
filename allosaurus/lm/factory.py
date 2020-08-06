@@ -15,5 +15,5 @@ def read_lm(model_path, inference_config):
     assert lm_config.model   == 'phone_ipa', 'only phone_ipa model is supported for allosaurus now'
     assert lm_config.backend == 'numpy', 'only numpy backend is supported for allosaurus now'
 
-    model = PhoneDecoder(model_path)
+    model = PhoneDecoder(model_path, inference_config)
     return model

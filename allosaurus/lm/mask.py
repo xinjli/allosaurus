@@ -83,7 +83,7 @@ class UnitMask:
 
                     domain_phone = self.domain_unit.get_unit(domain_idx)
 
-                    print("domain ", domain_phone, " target ", target_phone)
+                    #print("domain ", domain_phone, " target ", target_phone)
                     score = self.articulatory.similarity(domain_phone, target_phone)
 
                     if score >= max_domain_score:
@@ -97,6 +97,8 @@ class UnitMask:
                 # map max_domain_idx to target_idx
                 self.invalid_mask -= { max_domain_idx }
                 self.valid_mask.add(max_domain_idx)
+
+                #print("target phone", target_phone, ' mapped to idx ', max_domain_idx)
 
                 self.unit_map[max_domain_idx] = target_idx
 

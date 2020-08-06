@@ -27,6 +27,21 @@ def read_unit(unit_path):
     unit = Unit(unit_to_id)
     return unit
 
+def write_unit(unit, unit_path):
+    """
+    dump units to file
+
+    :param unit:
+    :param unit_path:
+    :return:
+    """
+
+    w = open(str(unit_path), 'w', encoding='utf-8')
+    for i in range(1, len(unit.id_to_unit)):
+        u = unit.id_to_unit[i]
+        w.write(u+' '+str(i)+'\n')
+
+    w.close()
 
 class Unit:
 

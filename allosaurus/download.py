@@ -3,6 +3,7 @@ import tarfile
 from urllib.request import urlopen
 import io
 import argparse
+import os
 
 def download_model(model_name=None):
 
