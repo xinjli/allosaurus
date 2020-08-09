@@ -1,11 +1,13 @@
 # Allosaurus
-Allosaurus is a pretrained universal phone recognizer. 
+Allosaurus is a pretrained universal phone recognizer. It can be used to recognize phones in more than 2000 languages.
 
-It can be used to recognize narrow phones in more than 2000 languages.
+This tool is based on our ICASSP 2020 work [Universal Phone Recognition with a Multilingual Allophone System](https://arxiv.org/pdf/2002.11800.pdf)
 
 ![Architecture](arch.png?raw=true "Architecture")
 
-## Install
+## Get Started
+
+### Install
 Allosaurus is available from pip
 ```bash
 pip install allosaurus
@@ -16,8 +18,30 @@ You can also clone this repository and install
 python setup.py install
 ```
 
+### Quick start
+The basic usage is pretty simple, your input is an wav audio file and output is a sequence of phones.
+
+```bash
+python -m allosaurus.run  -i <audio>
+```
+
+For example, you can try using the attached sample file in this repository. Guess what's in this audio file :)
+```bash
+python -m allosaurus.run -i sample.wav
+æ l u s ɔ ɹ s
+```
+
+For full features and details, please refer to the following sections.
+
+### Online Demo
+There is also an online version available for allosaurus.
+You can try this at [https://www.dictate.app/phone](https://www.dictate.app/phone)
+
+![Online Demo](online_demo.png)
+
+
 ## Inference 
-The basic usage is as follows:
+The main command is as follows:
  
 ```bash
 python -m allosaurus.run [--lang <language name>] [--model <model name>] [--device_id <gpu_id>] -i <audio>
@@ -55,13 +79,12 @@ For example,
 ```bash
 # to get English phone inventory
 # ['a', 'aː', 'b', 'd', 'd̠', 'e', 'eː', 'e̞', 'f', 'h', 'i', 'iː', 'j', 'k', 'kʰ', 'l', 'm', 'n', 'o', 'oː', 'p', 'pʰ', 'r', 's', 't', 'tʰ', 't̠', 'u', 'uː', 'v', 'w', 'x', 'z', 'æ', 'ð', 'øː', 'ŋ', 'ɐ', 'ɐː', 'ɑ', 'ɑː', 'ɒ', 'ɒː', 'ɔ', 'ɔː', 'ɘ', 'ə', 'əː', 'ɛ', 'ɛː', 'ɜː', 'ɡ', 'ɪ', 'ɪ̯', 'ɯ', 'ɵː', 'ɹ', 'ɻ', 'ʃ', 'ʉ', 'ʉː', 'ʊ', 'ʌ', 'ʍ', 'ʒ', 'ʔ', 'θ']
-python -m allosaurus.list_phone --lang english
+python -m allosaurus.bin.list_phone --lang english
 
 # you can also skip lang option to get all inventory
 #['I', 'a', 'aː', 'ã', 'ă', 'b', 'bʲ', 'bʲj', 'bʷ', 'bʼ', 'bː', 'b̞', 'b̤', 'b̥', 'c', 'd', 'dʒ', 'dʲ', 'dː', 'd̚', 'd̥', 'd̪', 'd̯', 'd͡z', 'd͡ʑ', 'd͡ʒ', 'd͡ʒː', 'd͡ʒ̤', 'e', 'eː', 'e̞', 'f', 'fʲ', 'fʷ', 'fː', 'g', 'gʲ', 'gʲj', 'gʷ', 'gː', 'h', 'hʷ', 'i', 'ij', 'iː', 'i̞', 'i̥', 'i̯', 'j', 'k', 'kx', 'kʰ', 'kʲ', 'kʲj', 'kʷ', 'kʷʼ', 'kʼ', 'kː', 'k̟ʲ', 'k̟̚', 'k͡p̚', 'l', 'lʲ', 'lː', 'l̪', 'm', 'mʲ', 'mʲj', 'mʷ', 'mː', 'n', 'nj', 'nʲ', 'nː', 'n̪', 'n̺', 'o', 'oː', 'o̞', 'o̥', 'p', 'pf', 'pʰ', 'pʲ', 'pʲj', 'pʷ', 'pʷʼ', 'pʼ', 'pː', 'p̚', 'q', 'r', 'rː', 's', 'sʲ', 'sʼ', 'sː', 's̪', 't', 'ts', 'tsʰ', 'tɕ', 'tɕʰ', 'tʂ', 'tʂʰ', 'tʃ', 'tʰ', 'tʲ', 'tʷʼ', 'tʼ', 'tː', 't̚', 't̪', 't̪ʰ', 't̪̚', 't͡s', 't͡sʼ', 't͡ɕ', 't͡ɬ', 't͡ʃ', 't͡ʃʲ', 't͡ʃʼ', 't͡ʃː', 'u', 'uə', 'uː', 'u͡w', 'v', 'vʲ', 'vʷ', 'vː', 'v̞', 'v̞ʲ', 'w', 'x', 'x̟ʲ', 'y', 'z', 'zj', 'zʲ', 'z̪', 'ä', 'æ', 'ç', 'çj', 'ð', 'ø', 'ŋ', 'ŋ̟', 'ŋ͡m', 'œ', 'œ̃', 'ɐ', 'ɐ̞', 'ɑ', 'ɑ̱', 'ɒ', 'ɓ', 'ɔ', 'ɔ̃', 'ɕ', 'ɕː', 'ɖ̤', 'ɗ', 'ə', 'ɛ', 'ɛ̃', 'ɟ', 'ɡ', 'ɡʲ', 'ɡ̤', 'ɡ̥', 'ɣ', 'ɣj', 'ɤ', 'ɤɐ̞', 'ɤ̆', 'ɥ', 'ɦ', 'ɨ', 'ɪ', 'ɫ', 'ɯ', 'ɯ̟', 'ɯ̥', 'ɰ', 'ɱ', 'ɲ', 'ɳ', 'ɴ', 'ɵ', 'ɸ', 'ɹ', 'ɹ̩', 'ɻ', 'ɻ̩', 'ɽ', 'ɾ', 'ɾj', 'ɾʲ', 'ɾ̠', 'ʀ', 'ʁ', 'ʁ̝', 'ʂ', 'ʃ', 'ʃʲː', 'ʃ͡ɣ', 'ʈ', 'ʉ̞', 'ʊ', 'ʋ', 'ʋʲ', 'ʌ', 'ʎ', 'ʏ', 'ʐ', 'ʑ', 'ʒ', 'ʒ͡ɣ', 'ʔ', 'ʝ', 'ː', 'β', 'β̞', 'θ', 'χ', 'ә', 'ḁ']
-python -m allosaurus.list_phone
+python -m allosaurus.bin.list_phone
 ```
-
 
 ### Model
 The `model` option is to select model for inference.
@@ -228,13 +251,13 @@ python -m allosaurus.run --lang <language id> --model <your new model> --device_
 
 
 ## Acknowledgements
-This work uses part of the following codes and inventories.
-* AlloVera: https://github.com/dmort27/allovera
-* Phoible: https://github.com/phoible/dev
-* python_speech_features: https://github.com/jameslyons/python_speech_features
-* fairseq: https://github.com/pytorch/fairseq
+This work uses part of the following codes and inventories. In particular, we heavily used AlloVera and Phoible to build this model's phone inventory.  
 
-In particular, we heavily used AlloVera and Phoible to build this model's phone inventory.  
+* [AlloVera](https://github.com/dmort27/allovera): For pretraining the model with correct allophone mappings 
+* [Phoible](https://github.com/phoible/dev): For language specific phone inventory 
+* [python_speech_features](https://github.com/jameslyons/python_speech_features): For mfcc, filter bank feature extraction
+* [fairseq](https://github.com/pytorch/fairseq): For some utilities
+* [kaldi_io](https://github.com/vesis84/kaldi-io-for-python): For kaldi scp, ark reader and writer
 
 ## Reference
 Please cite the following paper if you use code in  your work.
@@ -244,7 +267,7 @@ If you have any advice or suggestions, please feel free to send email to me (xin
 ```BibTex
 @inproceedings{li2020universal,
   title={Universal phone recognition with a multilingual allophone system},
-  author={Li, Xinjian and Dalmia, Siddharth and Li, Juncheng and Lee, Matthew and Littell, Patrick and Yao, Jiali and Anastasopoulos, Antonios and Mortensen, David R and Neubig, Graham and Black, Alan W and others},
+  author={Li, Xinjian and Dalmia, Siddharth and Li, Juncheng and Lee, Matthew and Littell, Patrick and Yao, Jiali and Anastasopoulos, Antonios and Mortensen, David R and Neubig, Graham and Black, Alan W and Florian, Metze},
   booktitle={ICASSP 2020-2020 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)},
   pages={8249--8253},
   year={2020},
