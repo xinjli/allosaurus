@@ -98,7 +98,7 @@ Typically, the model's name indicates its training date, so usually a higher mod
 To download a new model, you can run following command.
 
 ```bash
-python -m allosaurus.download <model>
+python -m allosaurus.download -m <model>
 ``` 
 
 Current available models are the followings
