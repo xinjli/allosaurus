@@ -10,7 +10,7 @@ def download_model(model_name=None):
     if model_name is None:
         model_name = 'latest'
 
-    model_dir = (Path(__file__).parent) / 'pretrained'
+    model_dir = (Path(__file__).parent.parent) / 'pretrained'
 
     if not (model_dir / model_name).exists():
 
