@@ -1,6 +1,6 @@
 from allosaurus.app import read_recognizer
 from allosaurus.model import get_all_models, resolve_model_name
-from allosaurus.download import download_model
+from allosaurus.bin.download_model import download_model
 import argparse
 
 if __name__ == '__main__':

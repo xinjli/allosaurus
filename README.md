@@ -98,7 +98,7 @@ Typically, the model's name indicates its training date, so usually a higher mod
 To download a new model, you can run following command.
 
 ```bash
-python -m allosaurus.download -m <model>
+python -m allosaurus.bin.download_model -m <model>
 ``` 
 
 Current available models are the followings
@@ -131,6 +131,47 @@ By default, device_id will be -1, which indicates the model will only use CPUs.
 
 However, if you have GPU, You can use them for inference by specifying device_id to a single GPU id. (note that multiple GPU inference is not supported)
 
+## Inventory Customization
+The default phone inventory might not be the inventory you would like to use, so we provide several commands here for you to customize your own inventory.
+
+We have mentioned that you can check your current (default) inventory with following command.
+```bash
+python -m allosaurus.bin.list_phone --lang <language name>
+```
+
+The current phone inventory file can be dumped into a file
+```bash
+# dump the phone file
+python -m allosaurus.bin.write_phone --lang <language name> --output <a path to save this file>
+```
+
+If you take a look at the file, it is just a simple format where each line represents a single phone. For example, the following one is the English file 
+```
+a
+aː
+b
+d
+...
+```
+
+You can customize this file to add or delete IPAs you would like. Each line should only contain one IPA phone without any space. It might be easier to debug later if IPAs are sorted, but it is not required.
+
+Next, update your model's inventory by the following command
+```bash
+python -m allosaurus.bin.update_phone --lang <language name> --input <the file you customized)
+``` 
+
+Then the file has been registered in your model, run the list_phone command again and you could see that it is now using your updated inventory
+```bash
+python -m allosaurus.bin.list_phone --lang <language name>
+```
+
+Now, if you run the inference again, you could also see the results also reflect your updated inventory.
+
+Even after your update, you can easily switch back to the original inventory. In this case, your updated file will be deleted.
+```bash
+python -m allosaurus.bin.restore_phone --lang <language name>
+```
 
 ## Fine-Tuning
 We notice that the pretrained models might not be accurate enough for some languages, 

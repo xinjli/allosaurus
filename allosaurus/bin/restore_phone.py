@@ -6,7 +6,7 @@ import argparse
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser('Restore language inventory')
-    parser.add_argument('-l', '--lang',  type=str, help='specify which language inventory to restore.')
+    parser.add_argument('-l', '--lang',  type=str, required=True, help='specify which language inventory to restore.')
     parser.add_argument('-m', '--model', type=str, default='latest', help='specify which model inventory')
 
     args = parser.parse_args()

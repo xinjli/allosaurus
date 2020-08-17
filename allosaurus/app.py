@@ -4,7 +4,7 @@ from allosaurus.audio import read_audio
 from allosaurus.pm.factory import read_pm
 from allosaurus.am.factory import read_am
 from allosaurus.lm.factory import read_lm
-from allosaurus.download import download_model
+from allosaurus.bin.download_model import download_model
 
 
 def read_recognizer(inference_config):
