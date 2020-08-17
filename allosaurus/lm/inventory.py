@@ -36,14 +36,74 @@ class Inventory:
             self.lang2phonefile[glotto_id.lower()] = phone_text
 
     def get_unit(self, lang_id):
+        """
+        load a unit specified by the lang_id
+
+        Args:
+            lang_id: ISO id
+
+        Returns:
+
+        """
 
         assert lang_id in self.lang2phonefile, "Language "+lang_id+" is not available !"
 
-        unit_file = self.model_path / 'inventory' / self.lang2phonefile[lang_id]
+        # search customized file first, if not exist use the default one.
+        updated_unit_file = self.model_path / 'inventory' / ('updated_'+self.lang2phonefile[lang_id])
+        if updated_unit_file.exists():
+            unit_file = updated_unit_file
+        else:
+            unit_file = self.model_path / 'inventory' / self.lang2phonefile[lang_id]
+
         target_unit = read_unit(str(unit_file))
 
         return target_unit
 
+    def update_unit(self, lang_id, unit_file):
+        """
+        update the existing unit with a new unit file
+
+        Args:
+            lang_id:
+            unit_file:
+
+        Returns:
+
+        """
+
+        assert lang_id in self.lang2phonefile, "Language "+lang_id+" is not available !"
+
+
+        # load the new unit file and validate its format
+        new_unit = read_unit(unit_file)
+
+        # the model path it should be stored
+        updated_unit_file = self.model_path / 'inventory' / ('updated_'+self.lang2phonefile[lang_id])
+
+        # save the new file
+        write_unit(new_unit, updated_unit_file)
+
+    def restore_unit(self, lang_id):
+        """
+        restore the original phone units
+
+        Args:
+            lang_id:
+
+        Returns:
+
+        """
+
+        assert lang_id in self.lang2phonefile, "Language "+lang_id+" is not available !"
+
+        # the updated unit file
+        updated_unit_file = self.model_path / 'inventory' / ('updated_'+self.lang2phonefile[lang_id])
+
+        # check whether it has an updated file
+        assert updated_unit_file.exists(), "language "+lang_id+" does not have any customized inventory."
+
+        # delete this file
+        updated_unit_file.unlink()
 
     def get_mask(self, lang_id=None, approximation=False):
 

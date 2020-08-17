@@ -13,21 +13,24 @@ def read_unit(unit_path):
     for line in open(str(unit_path), 'r', encoding='utf-8'):
         fields = line.strip().split()
 
-        assert len(fields) < 3
+        assert len(fields) < 3, " each line should contain at most two field separated by space."
 
+        # this is simple format
         if len(fields) == 1:
             unit = fields[0]
             idx += 1
         else:
+            # this is kaldi format
             unit = fields[0]
             idx = int(fields[1])
 
+        assert unit not in unit_to_id, "there are duplicate phones."
         unit_to_id[unit] = idx
 
     unit = Unit(unit_to_id)
     return unit
 
-def write_unit(unit, unit_path):
+def write_unit(unit, unit_path, format='kaldi'):
     """
     dump units to file
 
@@ -36,10 +39,18 @@ def write_unit(unit, unit_path):
     :return:
     """
 
+    # unit can be either kaldi format (each line contain two field phone and index) or
+    # the simple format (each line contains only phone)
+    assert format in ['kaldi', 'simple']
+
     w = open(str(unit_path), 'w', encoding='utf-8')
     for i in range(1, len(unit.id_to_unit)):
         u = unit.id_to_unit[i]
-        w.write(u+' '+str(i)+'\n')
+
+        if format == 'kaldi':
+            w.write(u+' '+str(i)+'\n')
+        else:
+            w.write(u+'\n')
 
     w.close()
 
