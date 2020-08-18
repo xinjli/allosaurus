@@ -239,7 +239,7 @@ To prepare the text features, run the following command again on both your `trai
 
 ```bash
 # command to prepare token
-python -m pyspeech.bin.prep_token --model=<some_pretrained_model> --lang=<your_target_language_id> --path=/path/to/your/directory (train or validate)
+python -m allosaurus.bin.prep_token --model=<some_pretrained_model> --lang=<your_target_language_id> --path=/path/to/your/directory (train or validate)
 ```
 
 The `path` and `model` should be the same as the previous command. The `lang` is the 3 character ISO language id of this dataset.
