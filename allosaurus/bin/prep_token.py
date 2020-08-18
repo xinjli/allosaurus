@@ -37,9 +37,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     data_path = Path(args.path)
 
-    wave_path = data_path / 'text'
+    text_path = data_path / 'text'
 
-    assert wave_path.exists(), "the path directory should contain a wave file, please check README.md for details"
+    assert text_path.exists(), "the path directory should contain a wave file, please check README.md for details"
 
     # resolve model's name
     model_name = resolve_model_name(args.model)
