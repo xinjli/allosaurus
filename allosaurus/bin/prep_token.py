@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     text_path = data_path / 'text'
 
-    assert text_path.exists(), "the path directory should contain a wave file, please check README.md for details"
+    assert text_path.exists(), "the path directory should contain a text file, please check README.md for details"
 
     # resolve model's name
     model_name = resolve_model_name(args.model)
