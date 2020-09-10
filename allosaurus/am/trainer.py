@@ -145,6 +145,8 @@ class Trainer:
 
             self.reporter.write(f"epoch{epoch} | validate per : {validate_phone_error_rate:0.5f}")
             if validate_phone_error_rate <= self.best_per:
+                self.best_per = validate_phone_error_rate
+                self.num_no_improvement = 0
                 self.reporter.write("saving model")
 
                 model_name = f"model_{validate_phone_error_rate:0.5f}.pt"
