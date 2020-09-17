@@ -10,7 +10,7 @@ def get_all_models():
     model_dir = Path(__file__).parent / 'pretrained'
     models = list(sorted(model_dir.glob('*'), reverse=True))
 
-    assert len(models) > 0, "No models are available, you can maually download a model with download command or just run inference to download the latest one automatically"
+    #assert len(models) > 0, "No models are available, you can maually download a model with download command or just run inference to download the latest one automatically"
 
     return models
 
