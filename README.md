@@ -44,20 +44,29 @@ You can try this at [https://www.dictate.app/phone](https://www.dictate.app/phon
 The main command is as follows:
  
 ```bash
-python -m allosaurus.run [--lang <language name>] [--model <model name>] [--device_id <gpu_id>] -i <audio>
+python -m allosaurus.run [--lang <language name>] [--model <model name>] [--device_id <gpu_id>] [--output <output_file>] -i <audio file/directory>
 ```
-It will recognize the narrow phones in the audio file and print them in stdout.
+It will recognize the narrow phones in the audio file(s).
 
-Only audio argument is mandatory, other options can ignored. Please refer to following sections for their details. 
+Only the input argument is mandatory, other options can ignored. Please refer to following sections for their details. 
 
-### Audio
-Audio should be a single input audio file
+### Input
+The input can be a single file or a directory containing multiple audio files.
+
+If the input is a single file, it will output only the phone sequence; if the input is a directory, it will output both the file name and phone sequence, results will be sorted by file names. 
+
+The audio file(s) should be in the following format:
 
 * It should be a wav file. If the audio is not in the wav format, please convert your audio to a wav format using sox or ffmpeg in advance.
 
 * The sampling rate can be arbitrary, we will automatically resample them based on models' requirements.
 
 * We assume the audio is a mono-channel audio.
+
+### Output
+The output is by default stdout (i.e. it will print all results to terminal).
+
+If you specify a file as the output, then all output will be directed to that file.
 
 ### Language
 The `lang` option is the language id. It is to specify the phone inventory you want to use.
