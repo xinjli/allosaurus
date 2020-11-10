@@ -54,7 +54,7 @@ You can try this at [https://www.dictate.app/phone](https://www.dictate.app/phon
 The command line interface is as follows:
  
 ```bash
-python -m allosaurus.run [--lang <language name>] [--model <model name>] [--device_id <gpu_id>] [--output <output_file>] -i <audio file/directory>
+python -m allosaurus.run [--lang <language name>] [--model <model name>] [--device_id <gpu_id>] [--output <output_file>] [--topk <int>] -i <audio file/directory>
 ```
 It will recognize the narrow phones in the audio file(s).
 Only the input argument is mandatory, other options can ignored. Please refer to following sections for their details. 
@@ -160,6 +160,21 @@ python -m allosaurus.bin.remove_model
 By default, device_id will be -1, which indicates the model will only use CPUs.  
 
 However, if you have GPU, You can use them for inference by specifying device_id to a single GPU id. (note that multiple GPU inference is not supported)
+
+### Top K
+Sometimes generating more phones might be helpful. Specifying the top-k arg will generate k phones at each emitting frame. Default is 1.
+ 
+```bash
+# default topk is 1
+python -m allosaurus.run -i sample.wav
+æ l u s ɔ ɹ s
+
+# output top 5 probable phones at emitting frame, "|" is used to delimit frames (no delimiter when topk=1)
+# the left most phone is the most probable phone 
+# <blk> is blank which can be ignored.
+python -m allosaurus.run -i sample.wav --topk=5
+æ ɛ ɒ a ə | l l̪ lː ʁ <blk> | u ɨ uː ɤ ɪ | s <blk> z s̪ sː | ɔ ɑ <blk> ɹ̩ uə | ɹ ɾ <blk> l̪ r | s z s̪ zʲ sː
+```
 
 ## Inventory Customization
 The default phone inventory might not be the inventory you would like to use, so we provide several commands here for you to customize your own inventory.

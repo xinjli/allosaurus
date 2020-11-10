@@ -21,7 +21,7 @@ class PhoneDecoder:
 
         self.unit = self.inventory.unit
 
-    def compute(self, logits, lang_id=None, blank_factor=1.0):
+    def compute(self, logits, lang_id=None, topk=1, blank_factor=1.0):
         """
         decode phones from logits
 
@@ -41,21 +41,32 @@ class PhoneDecoder:
         else:
             mask = self.inventory.unit
 
-        # greedy decoding to find argmax phones
-        decoded_seq = []
+        emit_frame_idx = []
+        cur_max_arg = -1
 
-        for t in range(len(logits)):
+        # find all emitting frames
+        for i in range(len(logits)):
 
-            logit = logits[t]
+            logit = logits[i]
             logit[0] /= blank_factor
 
             arg_max = np.argmax(logit)
-            decoded_seq.append(arg_max)
 
-        ids = [x[0] for x in groupby(decoded_seq)]
+            # this is an emitting frame
+            if arg_max != cur_max_arg and arg_max != 0:
+                emit_frame_idx.append(i)
+                cur_max_arg = arg_max
 
-        # ignore when x is <blk> (0)
-        cleaned_decoded_seq = [x for x in filter(lambda x: x != 0, ids)]
+        # decode all emitting frames
+        decoded_seq = []
+        for idx in emit_frame_idx:
+            logit = logits[idx]
+            top_phones = logit.argsort()[-topk:][::-1]
+            decoded_seq.append(' '.join(mask.get_units(top_phones)))
 
-        phones = ' '.join(mask.get_units(cleaned_decoded_seq))
+        if topk == 1:
+            phones = ' '.join(decoded_seq)
+        else:
+            phones = ' | '.join(decoded_seq)
+
         return phones

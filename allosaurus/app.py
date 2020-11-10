@@ -49,7 +49,7 @@ class Recognizer:
         self.lm = lm
         self.config = config
 
-    def recognize(self, filename, lang_id='ipa'):
+    def recognize(self, filename, lang_id='ipa', topk=1):
         # recognize a single file
 
         assert str(filename).endswith('.wav'), "only wave file is supported in allosaurus"
@@ -73,5 +73,5 @@ class Recognizer:
         else:
             batch_lprobs = tensor_batch_lprobs.detach().numpy()
 
-        token = self.lm.compute(batch_lprobs[0], lang_id)
+        token = self.lm.compute(batch_lprobs[0], lang_id, topk)
         return token
