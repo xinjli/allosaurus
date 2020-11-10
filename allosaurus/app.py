@@ -5,9 +5,22 @@ from allosaurus.pm.factory import read_pm
 from allosaurus.am.factory import read_am
 from allosaurus.lm.factory import read_lm
 from allosaurus.bin.download_model import download_model
+from allosaurus.model import resolve_model_name, get_all_models
+from argparse import Namespace
 
+def read_recognizer(inference_config_or_name='latest'):
 
-def read_recognizer(inference_config):
+    # download specified model automatically if no model exists
+    if len(get_all_models()) == 0:
+        download_model('latest')
+
+    # create default config if input is the model's name
+    if isinstance(inference_config_or_name, str):
+        model_name = resolve_model_name(inference_config_or_name)
+        inference_config = Namespace(model=model_name, device_id=-1, lang='ipa', approximate=False)
+    else:
+        assert isinstance(inference_config_or_name, Namespace)
+        inference_config = inference_config_or_name
 
     model_path = Path(__file__).parent / 'pretrained' / inference_config.model
 
@@ -36,7 +49,7 @@ class Recognizer:
         self.lm = lm
         self.config = config
 
-    def recognize(self, filename, lang_id):
+    def recognize(self, filename, lang_id='ipa'):
         # recognize a single file
 
         assert str(filename).endswith('.wav'), "only wave file is supported in allosaurus"

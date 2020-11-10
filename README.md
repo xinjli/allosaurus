@@ -31,6 +31,17 @@ python -m allosaurus.run -i sample.wav
 æ l u s ɔ ɹ s
 ```
 
+You can also use allosaurus directly in python
+```python
+from allosaurus.app import read_recognizer
+
+# load your model
+model = read_recognizer()
+
+# run inference -> æ l u s ɔ ɹ s
+model.recognize('sample.wav')
+```
+
 For full features and details, please refer to the following sections.
 
 ### Online Demo
@@ -39,17 +50,27 @@ You can try this at [https://www.dictate.app/phone](https://www.dictate.app/phon
 
 ![Online Demo](online_demo.png)
 
-
 ## Inference 
-The main command is as follows:
+The command line interface is as follows:
  
 ```bash
 python -m allosaurus.run [--lang <language name>] [--model <model name>] [--device_id <gpu_id>] [--output <output_file>] -i <audio file/directory>
 ```
 It will recognize the narrow phones in the audio file(s).
-
 Only the input argument is mandatory, other options can ignored. Please refer to following sections for their details. 
 
+There is also a simple python interface as follows:
+```python
+from allosaurus.app import read_recognizer
+
+# load your model by the <model name>, will use 'latest' if left empty
+model = read_recognizer(model)
+
+# run inference on <audio_file> with <lang>, lang will be 'ipa' if left empty
+model.recognize(audio_file, lang)
+```
+
+The details of arguments in both interface are as follows:
 ### Input
 The input can be a single file or a directory containing multiple audio files.
 
