@@ -1,6 +1,7 @@
 from allosaurus.lm.inventory import *
 from pathlib import Path
 from itertools import groupby
+import numpy as np
 
 class PhoneDecoder:
 
@@ -61,8 +62,17 @@ class PhoneDecoder:
         decoded_seq = []
         for idx in emit_frame_idx:
             logit = logits[idx]
+            exp_prob = np.exp(logit - np.max(logit))
+            probs = exp_prob / exp_prob.sum()
+
             top_phones = logit.argsort()[-topk:][::-1]
-            decoded_seq.append(' '.join(mask.get_units(top_phones)))
+            top_probs = sorted(probs)[-topk:][::-1]
+
+            if topk == 1:
+                decoded_seq.append(' '.join(mask.get_units(top_phones)))
+            else:
+                phone_prob_lst = [f"{phone} ({prob:.3f})" for phone, prob in zip(mask.get_units(top_phones), top_probs)]
+                decoded_seq.append(' '.join(phone_prob_lst))
 
         if topk == 1:
             phones = ' '.join(decoded_seq)

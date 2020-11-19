@@ -170,10 +170,10 @@ python -m allosaurus.run -i sample.wav
 æ l u s ɔ ɹ s
 
 # output top 5 probable phones at emitting frame, "|" is used to delimit frames (no delimiter when topk=1)
-# the left most phone is the most probable phone 
+# probability is attached for each phone, the left most phone is the most probable phone 
 # <blk> is blank which can be ignored.
 python -m allosaurus.run -i sample.wav --topk=5
-æ ɛ ɒ a ə | l l̪ lː ʁ <blk> | u ɨ uː ɤ ɪ | s <blk> z s̪ sː | ɔ ɑ <blk> ɹ̩ uə | ɹ ɾ <blk> l̪ r | s z s̪ zʲ sː
+æ (0.577) ɛ (0.128) ɒ (0.103) a (0.045) ə (0.021) | l (0.754) l̪ (0.196) lː (0.018) ʁ (0.007) ʀ (0.006) | u (0.233) ɨ (0.218) uː (0.104) ɤ (0.070) ɪ (0.066) | s (0.301) <blk> (0.298) z (0.118) s̪ (0.084) sː (0.046) | ɔ (0.454) ɑ (0.251) <blk> (0.105) ɹ̩ (0.062) uə (0.035) | ɹ (0.867) ɾ (0.067) <blk> (0.024) l̪ (0.018) r (0.015) | s (0.740) z (0.191) s̪ (0.039) zʲ (0.009) sː (0.003)
 ```
 
 ## Inventory Customization
