@@ -218,6 +218,47 @@ Even after your update, you can easily switch back to the original inventory. In
 python -m allosaurus.bin.restore_phone --lang <language name>
 ```
 
+## Prior Customization
+You can also change the results by adjusting the prior probability for each phone. 
+This can help you reduce the unwanted phones or increase the wanted phones.
+
+For example, in the sample file, we get the output 
+```bash
+æ l u s ɔ ɹ s
+```
+Suppose you think the first phone is wrong, and would like to reduce the probability of this phone, you can create a new file ```prior.txt``` as follows
+```text
+æ -10.0
+```
+
+The file can contain multiple lines and each line has information for each phone. 
+The first field is your target phone and the second field is the log-based score to adjust your probability. Positive score means you want to boost its prediction, 
+negative score will suppress its prediction. In this case, we can get a new result
+
+```bash
+python -m allosaurus.run -i=sample.wav --lang=eng --prior=prior.txt 
+ɛ l u s ɔ ɹ s
+```
+
+where you can see ```æ``` is suppressed and another vowel ```ɛ``` replaced it.
+
+Another application of prior is to change the number of total output phones. You might want more phones outputs or less phones outputs.
+In this case, you can change the score for the ```<blk>``` which corresponds to the silence phone.
+
+A positive ```<blk>``` score will add more silence, therefore decrease the number of outputs, similarly, a negative ```<blk>``` will increase the outputs. The following example illustrates this.
+```text
+
+# <blk> 1.0
+python -m allosaurus.run -i=sample.wav --lang=eng --prior=prior.txt 
+æ l u ɔ ɹ s
+
+# <blk> -1.0
+$ python -m allosaurus.run -i=sample.wav --lang=eng --prior=prior.txt 
+æ l u s f ɔ ɹ s
+```
+
+The first example reduces one phone and the second example adds a new phone.
+
 ## Fine-Tuning
 We notice that the pretrained models might not be accurate enough for some languages, 
 so we also provide a fine-tuning tool here to allow users to further improve their model by adapting to their data.

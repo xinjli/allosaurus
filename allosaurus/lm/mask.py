@@ -1,15 +1,34 @@
 from .articulatory import *
 from .unit import *
+from pathlib import Path
+
+def read_prior(prior_path):
+
+    prior = {}
+
+    for i, line in open(str(prior_path), 'r', encoding='utf-8'):
+        unit, prob = line.split()
+
+        if i == 0:
+            assert unit == '<blk>', 'first element should be blank'
+
+        prior[unit] = np.log(prob)
+
+    return prior
+
+
 
 class UnitMask:
 
-    def __init__(self, domain_unit, target_unit, approximation=False):
+    def __init__(self, domain_unit, target_unit, approximation=False, inference_config=None):
         """
         MaskUnit provides interface to mask phones
 
         :param domain_unit: all available units (phones)
         :param target_unit: usually a subset of domain_unit
         """
+
+        self.inference_config = inference_config
 
         self.domain_unit = domain_unit
         self.target_unit = target_unit
@@ -26,6 +45,13 @@ class UnitMask:
         # index mapping from all_unit to target_unit
         self.unit_map = dict()
 
+        # prior
+        self.prior = np.zeros(len(self.domain_unit), dtype=np.float32)
+
+        if self.inference_config and self.inference_config.prior and Path(self.inference_config.prior).exists():
+            self.create_prior()
+
+        # mask
         self.create_mask()
 
         if self.approximation:
@@ -68,6 +94,14 @@ class UnitMask:
                 # register this domain idx -> target_idx
                 self.unit_map[domain_idx] = target_idx
 
+    def create_prior(self):
+
+        for line in open(str(self.inference_config.prior), 'r', encoding='utf-8'):
+            phone, logprob = line.strip().split()
+
+            if phone in self.domain_unit:
+                domain_idx = self.domain_unit.get_id(phone)
+                self.prior[domain_idx] = logprob
 
     def approxmiate_phone(self):
 
@@ -112,7 +146,11 @@ class UnitMask:
     def mask_logits(self, logits):
         # mask inavailable logits
 
+        # apply mask
         logits[:,self.invalid_index_mask] = -100000000.0
+
+        # apply prior
+        logits += self.prior
 
         return logits
 

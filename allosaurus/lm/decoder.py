@@ -18,7 +18,7 @@ class PhoneDecoder:
         self.config = inference_config
 
         # create inventory
-        self.inventory = Inventory(model_path)
+        self.inventory = Inventory(model_path, inference_config)
 
         self.unit = self.inventory.unit
 
@@ -32,15 +32,10 @@ class PhoneDecoder:
         """
 
         # apply mask if lang_id specified, this is to restrict the output phones to the desired phone subset
-        if lang_id and lang_id != 'ipa':
 
-            mask = self.inventory.get_mask(lang_id, approximation=self.config.approximate)
+        mask = self.inventory.get_mask(lang_id, approximation=self.config.approximate)
 
-            logits = mask.mask_logits(logits)
-
-            # print("masking ", str(mask_units))
-        else:
-            mask = self.inventory.unit
+        logits = mask.mask_logits(logits)
 
         emit_frame_idx = []
         cur_max_arg = -1

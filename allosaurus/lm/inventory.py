@@ -4,7 +4,7 @@ from allosaurus.lm.mask import *
 
 class Inventory:
 
-    def __init__(self, model_path):
+    def __init__(self, model_path, inference_config=None):
 
         self.model_path = model_path
 
@@ -13,6 +13,8 @@ class Inventory:
         self.glotto_ids = []
 
         self.lang2phonefile = dict()
+
+        self.inference_config = inference_config
 
         # load all available inventories
         langs = json.load(open(self.model_path / 'inventory' / 'index.json', 'r', encoding='utf-8'))
@@ -107,6 +109,10 @@ class Inventory:
 
     def get_mask(self, lang_id=None, approximation=False):
 
-        target_unit = self.get_unit(lang_id)
+        # use its unit as the mask if the recognition target is the entire inventory
+        if lang_id is None or lang_id == 'ipa':
+            target_unit = self.unit
+        else:
+            target_unit = self.get_unit(lang_id)
 
-        return UnitMask(self.unit, target_unit, approximation)
+        return UnitMask(self.unit, target_unit, approximation, self.inference_config)

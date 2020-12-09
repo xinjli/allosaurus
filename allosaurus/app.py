@@ -17,7 +17,7 @@ def read_recognizer(inference_config_or_name='latest'):
     # create default config if input is the model's name
     if isinstance(inference_config_or_name, str):
         model_name = resolve_model_name(inference_config_or_name)
-        inference_config = Namespace(model=model_name, device_id=-1, lang='ipa', approximate=False)
+        inference_config = Namespace(model=model_name, device_id=-1, lang='ipa', approximate=False, prior=None)
     else:
         assert isinstance(inference_config_or_name, Namespace)
         inference_config = inference_config_or_name
