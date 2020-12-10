@@ -17,7 +17,7 @@ if __name__ == '__main__':
     inventory = Inventory(model_path)
 
     if args.lang == 'ipa':
-        print("available phones: ", list(inventory.unit.id_to_unit.values())[1:])
+        print(' '.join(list(inventory.unit.id_to_unit.values())[1:]))
     else:
         lang = args.lang
         assert lang.lower() in inventory.lang_ids or lang.lower() in inventory.glotto_ids, f'language {args.lang} is not supported. Please verify it is in the language list'
@@ -25,7 +25,7 @@ if __name__ == '__main__':
         mask = inventory.get_mask(args.lang.lower(), approximation=args.approximate)
 
         unit = mask.target_unit
-        print('available phones: ', list(unit.id_to_unit.values())[1:])
+        print(' '.join(list(unit.id_to_unit.values()))[1:])
 
         if args.approximate:
             mask.print_maps()
