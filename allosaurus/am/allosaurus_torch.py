@@ -62,7 +62,7 @@ class AllosaurusTorchModel(nn.Module):
 
 
         # (B,T,H) -> (T,B,H)
-        input_tensor = input_tensor.transpose(0, 1)
+        input_tensor = input_tensor.transpose(0, 1).float()
 
         # extract lengths
         if input_lengths is None:
@@ -80,7 +80,7 @@ class AllosaurusTorchModel(nn.Module):
         # build each layer
 
         # (T,B,H) -> PackSequence
-        pack_sequence = nn.utils.rnn.pack_padded_sequence(input_tensor, input_lengths)
+        pack_sequence = nn.utils.rnn.pack_padded_sequence(input_tensor, input_lengths.cpu())
 
         # PackSequence -> (PackSequence, States)
         self.blstm_layer.flatten_parameters()
