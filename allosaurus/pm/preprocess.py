@@ -61,7 +61,7 @@ def framesig(sig, frame_len, frame_step, dither=1.0, preemph=0.97, remove_dc_off
     frames = frames.astype(np.float32)
     raw_frames = np.zeros(frames.shape)
     for frm in range(frames.shape[0]):
-        frames[frm, :] = do_dither(frames[frm, :], dither)  # dither
+        # frames[frm, :] = do_dither(frames[frm, :], dither)  # dither
         frames[frm, :] = do_remove_dc_offset(frames[frm, :])  # remove dc offset
         raw_frames[frm, :] = frames[frm, :]
         frames[frm, :] = do_preemphasis(frames[frm, :], preemph)  # preemphasize
