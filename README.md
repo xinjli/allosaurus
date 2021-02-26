@@ -129,13 +129,7 @@ To download a new model, you can run following command.
 
 ```bash
 python -m allosaurus.bin.download_model -m <model>
-``` 
-
-Current available models are the followings
-
-| Model | Description |
-| --- | --- |
-| `200529` | This is the `latest` model |
+```
 
 If you do not know the model name, 
 you can just use `latest` as model's name and it will automatically download the latest model.
@@ -153,6 +147,23 @@ To delete a model, you can use the following command. This might be useful when 
 python -m allosaurus.bin.remove_model
 ```
 
+Current available models are the followings
+
+#### Language Independent Model (Universal Model) 
+The universal models predict language-independent phones and covers many languages. This is the default model allosaurus will try to download and use.
+ If you cannot find your language on the language dependent models, please use this universal model instead. 
+
+| Model | Target Language | Description |
+| --- | --- | --- |
+| `uni2005` | Universal | This is the `latest` model (previously named as `200529`) |
+
+#### Language Dependent Model
+We are planning to deliver language-dependent models for some widely-used languages. The models here are trained with the target language specifically.
+It should perform much better than the universal model for the target language. Those models will not be downloaded automatically. Please use the `download_model` command above to download, and use `--model` flag during inference. 
+
+| Model | Target Language | Description |
+| --- | --- | --- |
+| `eng2102` | English (eng) | English only model|
 
 ### Device
 `device_id` controls which device to run the inference.
