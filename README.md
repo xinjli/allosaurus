@@ -187,6 +187,24 @@ python -m allosaurus.run -i sample.wav --topk=5
 æ (0.577) ɛ (0.128) ɒ (0.103) a (0.045) ə (0.021) | l (0.754) l̪ (0.196) lː (0.018) ʁ (0.007) ʀ (0.006) | u (0.233) ɨ (0.218) uː (0.104) ɤ (0.070) ɪ (0.066) | s (0.301) <blk> (0.298) z (0.118) s̪ (0.084) sː (0.046) | ɔ (0.454) ɑ (0.251) <blk> (0.105) ɹ̩ (0.062) uə (0.035) | ɹ (0.867) ɾ (0.067) <blk> (0.024) l̪ (0.018) r (0.015) | s (0.740) z (0.191) s̪ (0.039) zʲ (0.009) sː (0.003)
 ```
 
+### Phone Emission
+You can tell the model to emit more phones or less phones by changing the `--emit` or `-e` argument.
+
+```bash
+# default emit is 1.0
+python -m allosaurus.run -i sample.wav 
+æ l u s ɔ ɹ s
+
+# emit more phones when emit > 1
+python -m allosaurus.run -e 1.2 -i sample.wav 
+æ l u s f h ɔ ɹ s
+
+# emit less phones when emit < 1
+python -m allosaurus.run -e 0.8 -i sample.wav 
+æ l u ɹ s
+```
+
+
 ## Inventory Customization
 The default phone inventory might not be the inventory you would like to use, so we provide several commands here for you to customize your own inventory.
 

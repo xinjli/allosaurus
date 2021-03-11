@@ -14,6 +14,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', type=str, default='stdout', help='specify output file. the default will be stdout')
     parser.add_argument('-k', '--topk', type=int, default=1, help='output k phone for each emitting frame')
     parser.add_argument('-p', '--prior', type=str, required=False, default=None, help='supply prior to adjust phone predictions')
+    parser.add_argument('-e', '--emit', type=float, required=False, default=1.0, help='specify how many phones to emit. A larger number can emit more phones and a smaller number would suppress emission, default is 1.0')
     parser.add_argument('-a', '--approximate', type=bool, default=False, help='the phone inventory can still hardly to cover all phones. You can use turn on this flag to map missing phones to other similar phones to recognize. The similarity is measured with phonological features')
 
     args = parser.parse_args()
@@ -58,7 +59,7 @@ if __name__ == '__main__':
         assert args.input.endswith('.wav'), " Error: Please use a wav file. other audio files can be converted to wav by sox"
 
         # run inference
-        phones = recognizer.recognize(args.input, args.lang, args.topk)
+        phones = recognizer.recognize(args.input, args.lang, args.topk, args.emit)
 
         if output_fd:
             output_fd.write(phones+'\n')

@@ -22,12 +22,12 @@ class PhoneDecoder:
 
         self.unit = self.inventory.unit
 
-    def compute(self, logits, lang_id=None, topk=1, blank_factor=1.0):
+    def compute(self, logits, lang_id=None, topk=1, emit=1.0):
         """
         decode phones from logits
 
         :param logits: numpy array of logits
-        :param blank_factor:
+        :param emit: blank factor
         :return:
         """
 
@@ -44,7 +44,7 @@ class PhoneDecoder:
         for i in range(len(logits)):
 
             logit = logits[i]
-            logit[0] /= blank_factor
+            logit[0] /= emit
 
             arg_max = np.argmax(logit)
 
