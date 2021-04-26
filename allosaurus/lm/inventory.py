@@ -45,10 +45,17 @@ class Inventory:
             lang_id: ISO id
 
         Returns:
-
         """
 
-        assert lang_id in self.lang2phonefile, "Language "+lang_id+" is not available !"
+        # we can also specify a unit path as lang_id, makes it easier to customize
+        if lang_id not in self.lang2phonefile:
+
+            if not Path(lang_id).exists():
+                assert lang_id in self.lang2phonefile, "Language "+lang_id+" is not available !"
+            else:
+                target_unit = read_unit(str(lang_id))
+                return target_unit
+
 
         # search customized file first, if not exist use the default one.
         updated_unit_file = self.model_path / 'inventory' / ('updated_'+self.lang2phonefile[lang_id])
