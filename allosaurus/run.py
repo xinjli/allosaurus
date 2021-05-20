@@ -13,6 +13,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', '--input', type=str, required=True, help='specify your input wav file/directory')
     parser.add_argument('-o', '--output', type=str, default='stdout', help='specify output file. the default will be stdout')
     parser.add_argument('-k', '--topk', type=int, default=1, help='output k phone for each emitting frame')
+    parser.add_argument('-t', '--timestamp', type=bool, default=False, help='attach *approximate* timestamp for each phone, note that the timestamp might not be accurate')
     parser.add_argument('-p', '--prior', type=str, required=False, default=None, help='supply prior to adjust phone predictions')
     parser.add_argument('-e', '--emit', type=float, required=False, default=1.0, help='specify how many phones to emit. A larger number can emit more phones and a smaller number would suppress emission, default is 1.0')
     parser.add_argument('-a', '--approximate', type=bool, default=False, help='the phone inventory can still hardly to cover all phones. You can use turn on this flag to map missing phones to other similar phones to recognize. The similarity is measured with phonological features')
@@ -45,13 +46,21 @@ if __name__ == '__main__':
     if input_path.is_dir():
         wav_list = sorted(list(input_path.glob('*.wav')))
         for wav_path in wav_list:
-            phones = recognizer.recognize(str(wav_path), args.lang)
+            phones = recognizer.recognize(str(wav_path), args.lang, args.topk, args.emit, args.timestamp)
 
-            # save to file or print to stdout
-            if output_fd:
-                output_fd.write(wav_path.name+' '+phones+'\n')
+            # output format would be different when using timestamp
+            if args.timestamp:
+                if output_fd:
+                    output_fd.write('#'+wav_path.name+'\n'+phones+'\n')
+                else:
+                    print('#'+wav_path.name+'\n'+phones)
+
             else:
-                print(wav_path.name+' '+phones)
+                # save to file or print to stdout
+                if output_fd:
+                    output_fd.write(wav_path.name+' '+phones+'\n')
+                else:
+                    print(wav_path.name+' '+phones)
 
     else:
 
@@ -59,7 +68,7 @@ if __name__ == '__main__':
         assert args.input.endswith('.wav'), " Error: Please use a wav file. other audio files can be converted to wav by sox"
 
         # run inference
-        phones = recognizer.recognize(args.input, args.lang, args.topk, args.emit)
+        phones = recognizer.recognize(args.input, args.lang, args.topk, args.emit, args.timestamp)
 
         if output_fd:
             output_fd.write(phones+'\n')

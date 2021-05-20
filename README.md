@@ -172,6 +172,32 @@ By default, device_id will be -1, which indicates the model will only use CPUs.
 
 However, if you have GPU, You can use them for inference by specifying device_id to a single GPU id. (note that multiple GPU inference is not supported)
 
+### Timestamp
+You can retrieve an approximate timestamp for each recognized phone by using `timestamp` argument.
+
+```bash 
+python -m allosaurus.run --timestamp=True -i sample.wav 
+0.210 0.045 æ
+0.390 0.045 l
+0.450 0.045 u
+0.540 0.045 s
+0.630 0.045 ɔ
+0.720 0.045 ɹ
+0.870 0.045 s
+```
+
+The format here in each line is `start_timestamp duration phone` where the `start_timestamp` and `duration` are shown in seconds.
+
+Note that the current timestamp is only an approximation. It is provided by the CTC model, which might not be accurate in some cases due to its nature. 
+
+The same interface is also available in python as follows:
+
+```python
+model = read_recognizer()
+model.recognize('./sample.wav', timestamp=True)
+```
+
+
 ### Top K
 Sometimes generating more phones might be helpful. Specifying the top-k arg will generate k phones at each emitting frame. Default is 1.
  

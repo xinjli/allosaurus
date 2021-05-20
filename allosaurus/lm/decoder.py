@@ -22,7 +22,7 @@ class PhoneDecoder:
 
         self.unit = self.inventory.unit
 
-    def compute(self, logits, lang_id=None, topk=1, emit=1.0):
+    def compute(self, logits, lang_id=None, topk=1, emit=1.0, timestamp=False):
         """
         decode phones from logits
 
@@ -38,6 +38,7 @@ class PhoneDecoder:
         logits = mask.mask_logits(logits)
 
         emit_frame_idx = []
+
         cur_max_arg = -1
 
         # find all emitting frames
@@ -63,13 +64,27 @@ class PhoneDecoder:
             top_phones = logit.argsort()[-topk:][::-1]
             top_probs = sorted(probs)[-topk:][::-1]
 
+            stamp = f"{self.config.window_shift*idx:.3f} {self.config.window_size:.3f} "
+
             if topk == 1:
-                decoded_seq.append(' '.join(mask.get_units(top_phones)))
+
+                phones_str = ' '.join(mask.get_units(top_phones))
+                if timestamp:
+                    phones_str = stamp + phones_str
+
+                decoded_seq.append(phones_str)
             else:
                 phone_prob_lst = [f"{phone} ({prob:.3f})" for phone, prob in zip(mask.get_units(top_phones), top_probs)]
-                decoded_seq.append(' '.join(phone_prob_lst))
+                phones_str = ' '.join(phone_prob_lst)
 
-        if topk == 1:
+                if timestamp:
+                    phones_str = stamp + phones_str
+
+                decoded_seq.append(phones_str)
+
+        if timestamp:
+            phones = '\n'.join(decoded_seq)
+        elif topk == 1:
             phones = ' '.join(decoded_seq)
         else:
             phones = ' | '.join(decoded_seq)
