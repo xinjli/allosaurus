@@ -15,7 +15,7 @@ def download_model(model_name=None):
     if not (model_dir / model_name).exists():
 
         try:
-            url = 'https://www.pyspeech.com/static/model/recognition/allosaurus/' + model_name + '.tar.gz'
+            url = 'https://github.com/xinjli/allosaurus/releases/download/v1.0/' + model_name + '.tar.gz'
             print("downloading model ", model_name)
             print("from: ", url)
             print("to:   ", str(model_dir))

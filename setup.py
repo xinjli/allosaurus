@@ -2,7 +2,7 @@ from setuptools import setup,find_packages
 
 setup(
    name='allosaurus',
-   version='0.6.0',
+   version='1.0.0',
    description='a multilingual phone recognizer',
    author='Xinjian Li',
    author_email='xinjianl@cs.cmu.edu',
