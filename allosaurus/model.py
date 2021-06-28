@@ -1,28 +1,33 @@
 from pathlib import Path
 import shutil
 
-def get_all_models():
+def get_all_models(alt_model_path=None):
     """
     get all local models
 
     :return:
     """
-    model_dir = Path(__file__).parent / 'pretrained'
+    if alt_model_path:
+        model_dir = alt_model_path
+    else:
+        model_dir = Path(__file__).parent / 'pretrained'
     models = list(sorted(model_dir.glob('*'), reverse=True))
 
     #assert len(models) > 0, "No models are available, you can maually download a model with download command or just run inference to download the latest one automatically"
 
     return models
 
-def get_model_path(model_name):
+def get_model_path(model_name, alt_model_path=None):
     """
     get model path by name, verify its a valid path
 
     :param model_name: str
     :return: model path
     """
-
-    model_dir = Path(__file__).parent / 'pretrained'
+    if alt_model_path:
+        model_dir = alt_model_path
+    else:
+        model_dir = Path(__file__).parent / 'pretrained'
 
     resolved_model_name = resolve_model_name(model_name)
 
@@ -61,7 +66,7 @@ def delete_model(model_name):
         shutil.rmtree(str(model_path))
 
 
-def resolve_model_name(model_name='latest'):
+def resolve_model_name(model_name='latest', alt_model_path=None):
     """
     select the model
 
@@ -69,7 +74,7 @@ def resolve_model_name(model_name='latest'):
     :return:
     """
 
-    models = get_all_models()
+    models = get_all_models(alt_model_path)
 
     # get the latest model in local
     if model_name == 'latest':
