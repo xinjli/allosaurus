@@ -8,24 +8,29 @@ from allosaurus.bin.download_model import download_model
 from allosaurus.model import resolve_model_name, get_all_models
 from argparse import Namespace
 
-def read_recognizer(inference_config_or_name='latest'):
-
+def read_recognizer(inference_config_or_name='latest', alt_model_path=None):
+    if alt_model_path:
+        if not alt_model_path.exists():
+            download_model(inference_config_or_name, alt_model_path)
     # download specified model automatically if no model exists
     if len(get_all_models()) == 0:
-        download_model('latest')
+        download_model('latest', alt_model_path)
 
     # create default config if input is the model's name
     if isinstance(inference_config_or_name, str):
-        model_name = resolve_model_name(inference_config_or_name)
+        model_name = resolve_model_name(inference_config_or_name, alt_model_path)
         inference_config = Namespace(model=model_name, device_id=-1, lang='ipa', approximate=False, prior=None)
     else:
         assert isinstance(inference_config_or_name, Namespace)
         inference_config = inference_config_or_name
 
-    model_path = Path(__file__).parent / 'pretrained' / inference_config.model
+    if alt_model_path:
+        model_path = alt_model_path / inference_config.model
+    else:
+        model_path = Path(__file__).parent / 'pretrained' / inference_config.model
 
     if inference_config.model == 'latest' and not model_path.exists():
-        download_model(inference_config)
+        download_model(inference_config, alt_model_path)
 
     assert model_path.exists(), f"{inference_config.model} is not a valid model"
 
