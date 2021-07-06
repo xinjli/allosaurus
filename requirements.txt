@@ -4,3 +4,4 @@ resampy
 panphon
 torch
 editdistance
+requests
