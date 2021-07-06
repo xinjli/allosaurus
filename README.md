@@ -1,4 +1,7 @@
 # Allosaurus
+
+![CI Test](https://github.com/xinjli/allosaurus/actions/workflows/python.yml/badge.svg)
+
 Allosaurus is a pretrained universal phone recognizer. It can be used to recognize phones in more than 2000 languages.
 
 This tool is based on our ICASSP 2020 work [Universal Phone Recognition with a Multilingual Allophone System](https://arxiv.org/pdf/2002.11800.pdf)
