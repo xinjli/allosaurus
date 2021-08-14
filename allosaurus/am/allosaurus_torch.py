@@ -45,12 +45,14 @@ class AllosaurusTorchModel(nn.Module):
         parser.add_argument('--debug_model', type=str, default=False, help='print tensor info for debugging')
 
 
-    def forward(self, input_tensor, input_lengths, meta=None):
+    def forward(self, input_tensor, input_lengths, return_lstm=False, return_both=False, meta=None):
         """
 
         :param input: an Tensor with shape (B,T,H)
         :lengths: a list of length of input_tensor, if None then no padding
         :meta: dictionary containing meta information (should contain lang_id in this case
+        :return_lstm: [list containing the output_embeddings and their respective lengths]
+        :return_both: tuple containing (a list containing the output_embeddings and their respective lengths and the ouptut of phone layer)
         :return:
         """
 
@@ -93,5 +95,11 @@ class AllosaurusTorchModel(nn.Module):
         # (T,B,2H) -> (T,B,P)
         phone_tensor = self.phone_layer(output_tensor)
 
+        #added the return_lstm argument
+        if return_lstm: 
+            return [output_tensor.cpu(),input_lengths.cpu()]
+        if return_both:
+            return [(output_tensor.cpu(),input_lengths.cpu()), phone_tensor.transpose(0,1)]
+        
         # return (B,T,H) for gathering
-        return phone_tensor.transpose(0,1)
+        return phone_tensor.transpose(0,1) 
