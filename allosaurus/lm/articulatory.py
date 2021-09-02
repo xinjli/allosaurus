@@ -19,7 +19,7 @@ class Articulatory:
                 feats = []
 
         if len(feats) == 0:
-            feats = np.zeros(22)
+            feats = np.zeros(24)
         else:
             feats = np.array(feats[0], dtype=np.float32)
 

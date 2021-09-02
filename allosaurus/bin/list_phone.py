@@ -25,7 +25,7 @@ if __name__ == '__main__':
         mask = inventory.get_mask(args.lang.lower(), approximation=args.approximate)
 
         unit = mask.target_unit
-        print(' '.join(list(unit.id_to_unit.values()))[1:])
+        print(' '.join(list(unit.id_to_unit.values())[1:]))
 
         if args.approximate:
             mask.print_maps()
