@@ -37,6 +37,10 @@ class Inventory:
             self.lang2phonefile[iso_id.lower()] = phone_text
             self.lang2phonefile[glotto_id.lower()] = phone_text
 
+    def is_available(self, lang_id):
+
+        return lang_id in self.lang2phonefile
+
     def get_unit(self, lang_id):
         """
         load a unit specified by the lang_id

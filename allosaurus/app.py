@@ -54,6 +54,11 @@ class Recognizer:
         self.lm = lm
         self.config = config
 
+    def is_available(self, lang_id):
+        # check whether this lang id is available
+
+        return self.lm.inventory.is_available(lang_id)
+
     def recognize(self, filename, lang_id='ipa', topk=1, emit=1.0, timestamp=False):
         # recognize a single file
 

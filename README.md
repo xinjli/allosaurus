@@ -47,12 +47,6 @@ model.recognize('sample.wav')
 
 For full features and details, please refer to the following sections.
 
-### Online Demo
-There is also an online version available for allosaurus.
-You can try this at [https://www.dictate.app/phone](https://www.dictate.app/phone)
-
-![Online Demo](online_demo.png)
-
 ## Inference 
 The command line interface is as follows:
  
