@@ -5,3 +5,4 @@ panphon
 torch
 editdistance
 requests
+tqdm
