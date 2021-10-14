@@ -27,8 +27,8 @@ def download_model(model_name=None, alt_model_path=None):
             files = tarfile.open(fileobj=compressed_files)
             files.extractall(str(model_dir))
 
-        except:
-            print("Error: could not download the model")
+        except Exception as e:
+            print("Error: could not download the model", e)
             (model_dir / model_name).rmdir()
 
 
