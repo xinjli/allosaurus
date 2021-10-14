@@ -1,5 +1,6 @@
 from allosaurus.pm.feature import mfcc
 from allosaurus.pm.utils import *
+from allosaurus.audio import resample_audio
 import numpy as np
 
 class MFCC:
