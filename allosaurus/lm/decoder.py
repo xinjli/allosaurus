@@ -1,4 +1,5 @@
 from allosaurus.lm.inventory import *
+from allosaurus.lm.allophone import read_allophone
 from pathlib import Path
 from itertools import groupby
 import numpy as np
@@ -17,10 +18,20 @@ class PhoneDecoder:
 
         self.config = inference_config
 
-        # create inventory
-        self.inventory = Inventory(model_path, inference_config)
+        # setup language id
+        if inference_config.lang is not None:
+            self.lang = inference_config.lang
+        else:
+            self.lang = 'eng'
 
-        self.unit = self.inventory.unit
+        # create inventory
+        if self.config.model == 'phone_ipa':
+            self.inventory = Inventory(model_path, inference_config)
+            self.unit = self.inventory.unit
+        else:
+            self.allophone = read_allophone(model_path, self.lang)
+
+
 
     def compute(self, logits, lang_id=None, topk=1, emit=1.0, timestamp=False):
         """
@@ -31,11 +42,17 @@ class PhoneDecoder:
         :return:
         """
 
-        # apply mask if lang_id specified, this is to restrict the output phones to the desired phone subset
+        # In the original allosaurus model
+        # we apply mask if lang_id specified, this is to restrict the output phones to the desired phone subset
+        if self.config.model == 'phone_ipa':
+            mask = self.inventory.get_mask(lang_id, approximation=self.config.approximate)
+            logits = mask.mask_logits(logits)
+        else:
+            if lang_id is not None and lang_id != self.lang:
+                self.lang = lang_id
+                self.allophone = read_allophone(self.model_path, self.lang)
 
-        mask = self.inventory.get_mask(lang_id, approximation=self.config.approximate)
-
-        logits = mask.mask_logits(logits)
+            mask = self.allophone.phoneme
 
         emit_frame_idx = []
 

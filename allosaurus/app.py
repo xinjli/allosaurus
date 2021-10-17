@@ -68,18 +68,24 @@ class Recognizer:
             assert str(filename).endswith('.wav'), "only wave file is supported in allosaurus"
 
         # load wav audio
-        audio = read_audio(filename)
+        audio = read_audio(filename, self.pm.config.backend)
 
         # extract feature
         feat = self.pm.compute(audio)
 
         # add batch dim
-        feats = np.expand_dims(feat, 0)
-        feat_len = np.array([feat.shape[0]], dtype=np.int32)
+        if isinstance(feat, np.ndarray):
+            feats = np.expand_dims(feat, 0)
+            feat_len = np.array([feat.shape[0]], dtype=np.int32)
+        else:
+            feats = feat.unsqueeze(0)
+            feat_len = torch.LongTensor([feat.shape[0]])
 
         tensor_batch_feat, tensor_batch_feat_len = move_to_tensor([feats, feat_len], self.config.device_id)
 
-        tensor_batch_lprobs = self.am(tensor_batch_feat, tensor_batch_feat_len)
+        meta = {'lang_id': lang_id, 'device_id': self.config.device_id}
+
+        tensor_batch_lprobs = self.am(tensor_batch_feat, tensor_batch_feat_len, meta=meta)
 
         if self.config.device_id >= 0:
             batch_lprobs = tensor_batch_lprobs.cpu().detach().numpy()

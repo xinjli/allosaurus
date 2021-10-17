@@ -1,15 +1,20 @@
 import wave
 import numpy as np
 from pathlib import Path
+import torchaudio
 import resampy
 
-
-def read_audio(filename, header_only=False, channel=0):
+def read_audio(filename, backend, header_only=False, channel=0):
     """
     read_audio will read a raw wav and return an Audio object
 
     :param header_only: only load header without samples
     """
+
+    if backend == 'torch':
+        samples, sample_rate = torchaudio.load(filename)
+        return Audio(samples, sample_rate)
+
 
     if isinstance(filename, Path):
         filename = str(filename)
