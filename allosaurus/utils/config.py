@@ -1,7 +1,6 @@
 from pathlib import Path
 import json
 from argparse import Namespace
-from allospeech.config import allospeech_config
 import yaml
 
 class dotdict(dict):
@@ -20,8 +19,7 @@ def read_config(config_name_or_path, overwrite_config=None):
 
     else:
         # load preset config from config trunk
-        config_yml = config_name_or_path + '.yml'
-        config_path = allospeech_config.data_path / 'config' / config_yml
+        config_path = Path(config_name_or_path + '.yml')
 
         assert config_path.exists()
         config_dict = yaml.load(open(str(config_path)), Loader=yaml.FullLoader)

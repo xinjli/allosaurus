@@ -4,6 +4,7 @@ from pathlib import Path
 from itertools import groupby
 import numpy as np
 
+
 class PhoneDecoder:
 
     def __init__(self, model_path, inference_config):
@@ -25,15 +26,20 @@ class PhoneDecoder:
             self.lang = 'eng'
 
         # create inventory
-        if self.config.model == 'phone_ipa':
+        if self.config.model != 'interspeech21':
             self.inventory = Inventory(model_path, inference_config)
             self.unit = self.inventory.unit
         else:
             self.allophone = read_allophone(model_path, self.lang)
 
+    def is_available(self, lang_id):
 
+        if self.inventory is not None:
+            return self.inventory.is_available(lang_id)
+        else:
+            return self.model_path / 'inventory' / lang_id
 
-    def compute(self, logits, lang_id=None, topk=1, emit=1.0, timestamp=False):
+    def compute(self, logits, lang_id=None, topk=1, emit=1.0, timestamp=False, phoneme=False):
         """
         decode phones from logits
 
@@ -44,7 +50,7 @@ class PhoneDecoder:
 
         # In the original allosaurus model
         # we apply mask if lang_id specified, this is to restrict the output phones to the desired phone subset
-        if self.config.model == 'phone_ipa':
+        if self.config.model != 'interspeech21':
             mask = self.inventory.get_mask(lang_id, approximation=self.config.approximate)
             logits = mask.mask_logits(logits)
         else:
@@ -98,6 +104,10 @@ class PhoneDecoder:
                     phones_str = stamp + phones_str
 
                 decoded_seq.append(phones_str)
+
+            # in the interspeech21 model, we support output at the phoneme level
+            if phoneme and self.config.model == 'interspeech21':
+                decoded_seq = [self.allophone.phone2phoneme[phone][0] for phone in decoded_seq]
 
         if timestamp:
             phones = '\n'.join(decoded_seq)

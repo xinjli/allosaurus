@@ -3,6 +3,8 @@ import numpy as np
 from pathlib import Path
 import torchaudio
 import resampy
+from io import BytesIO
+
 
 def read_audio(filename, backend, header_only=False, channel=0):
     """
@@ -14,6 +16,9 @@ def read_audio(filename, backend, header_only=False, channel=0):
     if backend == 'torch':
         samples, sample_rate = torchaudio.load(filename)
         return Audio(samples, sample_rate)
+
+    if not isinstance(filename, BytesIO):
+        assert str(filename).endswith('.wav'), "only wave file is supported in the uni2005 allosaurus version"
 
 
     if isinstance(filename, Path):

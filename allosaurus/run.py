@@ -17,6 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--prior', type=str, required=False, default=None, help='supply prior to adjust phone predictions')
     parser.add_argument('-e', '--emit', type=float, required=False, default=1.0, help='specify how many phones to emit. A larger number can emit more phones and a smaller number would suppress emission, default is 1.0')
     parser.add_argument('-a', '--approximate', type=bool, default=False, help='the phone inventory can still hardly to cover all phones. You can use turn on this flag to map missing phones to other similar phones to recognize. The similarity is measured with phonological features')
+    parser.add_argument('-q', '--phoneme', type=bool, default=False, help='generate output at the phoneme level instead of the phone level')
 
     args = parser.parse_args()
 
@@ -46,7 +47,7 @@ if __name__ == '__main__':
     if input_path.is_dir():
         wav_list = sorted(list(input_path.glob('*.wav')))
         for wav_path in wav_list:
-            phones = recognizer.recognize(str(wav_path), args.lang, args.topk, args.emit, args.timestamp)
+            phones = recognizer.recognize(str(wav_path), args.lang, args.topk, args.emit, args.timestamp, args.phoneme)
 
             # output format would be different when using timestamp
             if args.timestamp:
@@ -68,7 +69,7 @@ if __name__ == '__main__':
         assert args.input.endswith('.wav'), " Error: Please use a wav file. other audio files can be converted to wav by sox"
 
         # run inference
-        phones = recognizer.recognize(args.input, args.lang, args.topk, args.emit, args.timestamp)
+        phones = recognizer.recognize(args.input, args.lang, args.topk, args.emit, args.timestamp, args.phoneme)
 
         if output_fd:
             output_fd.write(phones+'\n')

@@ -1,7 +1,7 @@
-from phonepiece.config import *
 from allosaurus.lm.unit import read_unit
 import json
 from collections import defaultdict
+from pathlib import Path
 
 
 def read_allophone(model_path, lang_id):
