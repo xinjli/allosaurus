@@ -184,7 +184,6 @@ class CompositionalPhoneticsModel(nn.Module):
 
         input_tensor, mask = self.frontend(input_tensor, mask)
 
-
         if self.relative_positional:
             enc_output = input_tensor
             # [1, 2T - 1]

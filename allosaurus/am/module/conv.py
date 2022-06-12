@@ -133,11 +133,10 @@ class ConvFrontEnd(nn.Module):
         :return:
         
         """
-        
         x = input_tensor.unsqueeze(1)
         x, mask = self.conv1(x, mask)
         x, mask = self.conv2(x, mask)
-        
+
         b, c, t, f = x.size()
         x = x.transpose(1, 2).reshape(b, t, c * f)
         x = self.output_layer(x)

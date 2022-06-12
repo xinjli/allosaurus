@@ -29,8 +29,12 @@ class PhoneDecoder:
         if self.config.model != 'interspeech21':
             self.inventory = Inventory(model_path, inference_config)
             self.unit = self.inventory.unit
+            self.config.offset = 0
         else:
             self.allophone = read_allophone(model_path, self.lang)
+            self.config.window_shift *= 4
+            self.config.window_size = 0.055
+            self.config.offset = 0.035
 
     def is_available(self, lang_id):
 
@@ -87,7 +91,7 @@ class PhoneDecoder:
             top_phones = logit.argsort()[-topk:][::-1]
             top_probs = sorted(probs)[-topk:][::-1]
 
-            stamp = f"{self.config.window_shift*idx:.3f} {self.config.window_size:.3f} "
+            stamp = f"{self.config.offset + self.config.window_shift*idx:.3f} {self.config.window_size:.3f} "
 
             if topk == 1:
 
