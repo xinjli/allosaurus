@@ -30,7 +30,7 @@ def prepare_feature(data_path, model):
 
         assert Path(audio_path).exists(), audio_path+" does not exist!"
 
-        audio = read_audio(audio_path)
+        audio = read_audio(audio_path, pm.config.backend)
 
         # extract feature
         feat = pm.compute(audio)

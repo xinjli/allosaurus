@@ -72,6 +72,8 @@ class Unit:
         for unit, idx in self.unit_to_id.items():
             self.id_to_unit[idx] = unit
 
+        self.elems = list(self.id_to_unit.values())
+
     def __str__(self):
         return '<Unit: ' + str(len(self.unit_to_id)) + ' elems>'
 

@@ -6,3 +6,6 @@ torch
 editdistance
 requests
 tqdm
+pyyaml
+torchaudio
+

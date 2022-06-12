@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 
-class AllosaurusTorchModel(nn.Module):
+class AllosaurusModel(nn.Module):
 
     def __init__(self, config):
-        super(AllosaurusTorchModel, self).__init__()
+        super(AllosaurusModel, self).__init__()
 
         self.hidden_size = config.hidden_size
         self.layer_size = config.layer_size

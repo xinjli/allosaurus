@@ -1,7 +1,9 @@
 from allosaurus.lm.inventory import *
+from allosaurus.lm.allophone import read_allophone
 from pathlib import Path
 from itertools import groupby
 import numpy as np
+
 
 class PhoneDecoder:
 
@@ -17,12 +19,31 @@ class PhoneDecoder:
 
         self.config = inference_config
 
+        # setup language id
+        if inference_config.lang is not None:
+            self.lang = inference_config.lang
+        else:
+            self.lang = 'eng'
+
         # create inventory
-        self.inventory = Inventory(model_path, inference_config)
+        if self.config.model != 'interspeech21':
+            self.inventory = Inventory(model_path, inference_config)
+            self.unit = self.inventory.unit
+            self.config.offset = 0
+        else:
+            self.allophone = read_allophone(model_path, self.lang)
+            self.config.window_shift *= 4
+            self.config.window_size = 0.055
+            self.config.offset = 0.035
 
-        self.unit = self.inventory.unit
+    def is_available(self, lang_id):
 
-    def compute(self, logits, lang_id=None, topk=1, emit=1.0, timestamp=False):
+        if self.inventory is not None:
+            return self.inventory.is_available(lang_id)
+        else:
+            return self.model_path / 'inventory' / lang_id
+
+    def compute(self, logits, lang_id=None, topk=1, emit=1.0, timestamp=False, phoneme=False):
         """
         decode phones from logits
 
@@ -31,11 +52,17 @@ class PhoneDecoder:
         :return:
         """
 
-        # apply mask if lang_id specified, this is to restrict the output phones to the desired phone subset
+        # In the original allosaurus model
+        # we apply mask if lang_id specified, this is to restrict the output phones to the desired phone subset
+        if self.config.model != 'interspeech21':
+            mask = self.inventory.get_mask(lang_id, approximation=self.config.approximate)
+            logits = mask.mask_logits(logits)
+        else:
+            if lang_id is not None and lang_id != self.lang:
+                self.lang = lang_id
+                self.allophone = read_allophone(self.model_path, self.lang)
 
-        mask = self.inventory.get_mask(lang_id, approximation=self.config.approximate)
-
-        logits = mask.mask_logits(logits)
+            mask = self.allophone.phoneme
 
         emit_frame_idx = []
 
@@ -64,7 +91,7 @@ class PhoneDecoder:
             top_phones = logit.argsort()[-topk:][::-1]
             top_probs = sorted(probs)[-topk:][::-1]
 
-            stamp = f"{self.config.window_shift*idx:.3f} {self.config.window_size:.3f} "
+            stamp = f"{self.config.offset + self.config.window_shift*idx:.3f} {self.config.window_size:.3f} "
 
             if topk == 1:
 
@@ -81,6 +108,10 @@ class PhoneDecoder:
                     phones_str = stamp + phones_str
 
                 decoded_seq.append(phones_str)
+
+            # in the interspeech21 model, we support output at the phoneme level
+            if phoneme and self.config.model == 'interspeech21':
+                decoded_seq = [self.allophone.phone2phoneme[phone][0] for phone in decoded_seq]
 
         if timestamp:
             phones = '\n'.join(decoded_seq)

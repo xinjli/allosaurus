@@ -7,7 +7,7 @@ from allosaurus.lm.factory import read_lm
 from allosaurus.bin.download_model import download_model
 from allosaurus.model import resolve_model_name, get_all_models
 from argparse import Namespace
-from io import BytesIO
+
 
 def read_recognizer(inference_config_or_name='latest', alt_model_path=None):
     if alt_model_path:
@@ -46,6 +46,7 @@ def read_recognizer(inference_config_or_name='latest', alt_model_path=None):
 
     return Recognizer(pm, am, lm, inference_config)
 
+
 class Recognizer:
 
     def __init__(self, pm, am, lm, config):
@@ -60,31 +61,39 @@ class Recognizer:
 
         return self.lm.inventory.is_available(lang_id)
 
-    def recognize(self, filename, lang_id='ipa', topk=1, emit=1.0, timestamp=False):
-        # recognize a single file
+    def recognize(self, filename, lang_id='ipa', topk=1, emit=1.0, timestamp=False, phoneme=False):
 
-        # filename check (skipping for BytesIO objects)
-        if not isinstance(filename, BytesIO):
-            assert str(filename).endswith('.wav'), "only wave file is supported in allosaurus"
+        # run acoustic model
+        batch_lprobs = self.get_logits(filename, lang_id).numpy()
+
+        token = self.lm.compute(batch_lprobs[0], lang_id, topk, emit=emit, timestamp=timestamp, phoneme=phoneme)
+        return token
+
+    def get_logits(self, filename, lang_id='ipa'):
 
         # load wav audio
-        audio = read_audio(filename)
+        audio = read_audio(filename, self.pm.config.backend)
 
         # extract feature
         feat = self.pm.compute(audio)
 
         # add batch dim
-        feats = np.expand_dims(feat, 0)
-        feat_len = np.array([feat.shape[0]], dtype=np.int32)
+        if isinstance(feat, np.ndarray):
+            feats = np.expand_dims(feat, 0)
+            feat_len = np.array([feat.shape[0]], dtype=np.int32)
+        else:
+            feats = feat.unsqueeze(0)
+            feat_len = torch.LongTensor([feat.shape[0]])
 
         tensor_batch_feat, tensor_batch_feat_len = move_to_tensor([feats, feat_len], self.config.device_id)
 
-        tensor_batch_lprobs = self.am(tensor_batch_feat, tensor_batch_feat_len)
+        meta = {'lang_id': lang_id, 'device_id': self.config.device_id}
+
+        tensor_batch_lprobs = self.am(tensor_batch_feat, tensor_batch_feat_len, meta=meta)
 
         if self.config.device_id >= 0:
-            batch_lprobs = tensor_batch_lprobs.cpu().detach().numpy()
+            batch_lprobs = tensor_batch_lprobs.cpu().detach()
         else:
-            batch_lprobs = tensor_batch_lprobs.detach().numpy()
+            batch_lprobs = tensor_batch_lprobs.detach()
 
-        token = self.lm.compute(batch_lprobs[0], lang_id, topk, emit=emit, timestamp=timestamp)
-        return token
+        return batch_lprobs
