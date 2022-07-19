@@ -89,4 +89,4 @@ class PhoneDecoder:
         else:
             phones = ' | '.join(decoded_seq)
 
-        return phones
+        return decoded_seq, emit_frame_idx
