@@ -43,6 +43,12 @@ class PhoneDecoder:
 
         # find all emitting frames
         for i in range(len(logits)):
+            
+            if emit < 0:
+                # disable emit frame detection
+                # and treat all time windows as emitting
+                emit_frame_idx.append(i)
+                continue
 
             logit = logits[i]
             logit[0] /= emit
