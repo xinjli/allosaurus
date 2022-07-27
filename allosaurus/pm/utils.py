@@ -13,6 +13,15 @@ def feature_cmvn(feature):
 
 
 def feature_window(feature, window_size=3):
+    """
+        chunks a given array based on the window_size (3) so the length of the 2nd dimensions is 3x the original.
+        given  [[1 2 3]
+                [3 4 5]
+                [6 7 8]] 
+        it turns into 
+                [[6 7 8 1 2 3 3 4 5]]
+        the function rolls the array so that the last is at the start and the first is at the end. it concatonates them and then removes the repeated elements. This creates and offset and aligns the audio data so that it is not out of time with the phones
+    """
 
     assert window_size == 3, "only window size 3 is supported"
 
@@ -22,6 +31,18 @@ def feature_window(feature, window_size=3):
     return feature
 
 def feature_window_ordered(feature, window_size=3):
+    """
+    chunks a given 2D array (feature) into a different 2D array of with a shfted array where the 2nd dimension is 3x the original length
+    e.g. given 
+     [[1, 2, 3],
+     [3, 4, 5],  
+     [6, 7, 8]]
+     to
+     [[1, 2, 3, 1, 2, 3, 3, 4, 5],
+     [6, 7, 8, 6, 7, 8, 6, 7, 8]]
+    
+    it repeats the first element (in this case 1, 2, 3) in order to shift the remaining elements so that it lines up the timing for the phones to be decoded
+     """
     assert window_size == 3, "Window_size must equall 3"
 
     shape = feature.shape 
