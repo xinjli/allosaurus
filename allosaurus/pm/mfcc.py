@@ -55,7 +55,8 @@ class MFCC:
         """
 
         # make sample rate consistent
-
+        audio = resample_audio(audio, self.sample_rate)
+        
         # validate sample rate
         assert self.config.sample_rate == audio.sample_rate, " sample rate of audio is "+str(audio.sample_rate)+" , but model is "+str(self.config.sample_rate)
 
