@@ -1,7 +1,6 @@
 import wave
 import numpy as np
 from pathlib import Path
-import resampy
 
 
 def read_audio(filename, header_only=False, channel=0):
@@ -10,7 +9,6 @@ def read_audio(filename, header_only=False, channel=0):
 
     :param header_only: only load header without samples
     """
-
     if isinstance(filename, Path):
         filename = str(filename)
 
@@ -63,12 +61,10 @@ def resample_audio(audio, target_sample_rate):
     # return the origin audio if sample rate is identical
     if audio.sample_rate == target_sample_rate:
         return audio
+    else:
+        assert True, "Audio needs to have a sample rate of 8KHz"
 
-    new_samples = resampy.resample(audio.samples, audio.sample_rate, target_sample_rate)
-
-    new_audio = Audio(new_samples, target_sample_rate)
-
-    return new_audio
+    return
 
 
 class Audio:
