@@ -50,6 +50,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+allosaurus/pm/test.py
 
 # Translations
 *.mo
@@ -124,6 +125,9 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# audio files
+allosaurus/*.wav
 
 # Pyre type checker
 .pyre/
