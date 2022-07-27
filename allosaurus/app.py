@@ -68,11 +68,7 @@ class Recognizer:
             assert str(filename).endswith('.wav'), "only wave file is supported in allosaurus"
 
         # load wav audio
-        print ("reading audio")
         audio = read_audio(filename)
-
-        # 280 audio samples comes out as 2 arrays in the feature variable
-        # 280 samples seems to be the minimum for feat[0] to not contain NaN
 
         # extract feature
         feat = self.pm.compute(audio)
@@ -80,7 +76,6 @@ class Recognizer:
         # add batch dim
         feats = np.expand_dims(feat, 0)
         feat_len = np.array([feat.shape[0]], dtype=np.int32)
-        print (feat_len)
 
         tensor_batch_feat, tensor_batch_feat_len = move_to_tensor([feats, feat_len], self.config.device_id)
 
