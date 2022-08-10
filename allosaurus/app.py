@@ -54,6 +54,7 @@ class Recognizer:
         self.pm = pm
         self.am = am
         self.lm = lm
+        self.phone_mask = None
         self.config = config
 
     def is_available(self, lang_id):
@@ -61,7 +62,8 @@ class Recognizer:
 
         return self.lm.inventory.is_available(lang_id)
 
-    def recognize(self, filename, lang_id='ipa', topk=1, emit=1.0, timestamp=False):
+    def recognize(self, filename, lang_id='ipa', topk=1, 
+                  emit=1.0, all_frames=False, timestamp=False):
         # recognize a single file
 
         # filename check (skipping for BytesIO objects)
@@ -92,13 +94,16 @@ class Recognizer:
         else:
             batch_lprobs = tensor_batch_lprobs.detach().numpy()
         
-        phone_tokens, emit_indices = self.lm.compute(
+        phone_tokens, emit_indices, phone_mask = self.lm.compute(
             batch_lprobs[0], 
             lang_id, 
             topk, 
             emit=emit, 
+            all_frames=all_frames,
             timestamp=timestamp)
 
+        self.phone_mask = phone_mask
+        
         emit_frames = build_emit_frame(
             self.lm.config.window_shift, 
             self.lm.config.window_size,
