@@ -22,7 +22,7 @@ python setup.py install
 ```
 
 ### Quick start
-The basic usage is pretty simple, your input is an wav audio file and output is a sequence of phones.
+The basic usage is pretty simple; your input is an wav audio file and output is a sequence of phones.
 
 ```bash
 python -m allosaurus.run  -i <audio>

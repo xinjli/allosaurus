@@ -22,7 +22,10 @@ class PhoneDecoder:
 
         self.unit = self.inventory.unit
 
-    def compute(self, logits, lang_id=None, topk=1, emit=1.0, timestamp=False):
+    def compute(self, logits, lang_id=None, topk=1, 
+                emit=1.0, all_frames=False, 
+                emit_blank=False,
+                timestamp=False):
         """
         decode phones from logits
 
@@ -42,15 +45,21 @@ class PhoneDecoder:
         cur_max_arg = -1
 
         # find all emitting frames
-        for i in range(len(logits)):
+        for i in range(len(logits)):                        
 
             logit = logits[i]
             logit[0] /= emit
 
             arg_max = np.argmax(logit)
 
+            if all_frames:
+                # disable emit frame detection
+                # and treat all time windows as emitting
+                emit_frame_idx.append(i)
+                continue
+
             # this is an emitting frame
-            if arg_max != cur_max_arg and arg_max != 0:
+            if arg_max != cur_max_arg and (emit_blank or arg_max != 0):
                 emit_frame_idx.append(i)
                 cur_max_arg = arg_max
 
@@ -89,4 +98,4 @@ class PhoneDecoder:
         else:
             phones = ' | '.join(decoded_seq)
 
-        return decoded_seq, emit_frame_idx
+        return decoded_seq, emit_frame_idx, mask
