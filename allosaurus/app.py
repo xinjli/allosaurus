@@ -6,6 +6,7 @@ from allosaurus.am.factory import read_am
 from allosaurus.lm.factory import read_lm
 from allosaurus.bin.download_model import download_model
 from allosaurus.model import resolve_model_name, get_all_models
+from .emit_frame import build_emit_frame
 from argparse import Namespace
 from io import BytesIO
 
@@ -43,7 +44,7 @@ def read_recognizer(inference_config_or_name='latest', alt_model_path=None):
 
     # create lm (language model: logits -> phone)
     lm = read_lm(model_path, inference_config)
-
+    
     return Recognizer(pm, am, lm, inference_config)
 
 class Recognizer:
@@ -53,6 +54,7 @@ class Recognizer:
         self.pm = pm
         self.am = am
         self.lm = lm
+        self.phone_mask = None
         self.config = config
 
     def is_available(self, lang_id):
@@ -60,7 +62,10 @@ class Recognizer:
 
         return self.lm.inventory.is_available(lang_id)
 
-    def recognize(self, filename, lang_id='ipa', topk=1, emit=1.0, timestamp=False):
+    def recognize(self, filename, lang_id='ipa', topk=1, 
+                  emit=1.0, all_frames=False, 
+                  emit_blank=False,
+                  timestamp=False):
         # recognize a single file
 
         # filename check (skipping for BytesIO objects)
@@ -77,14 +82,39 @@ class Recognizer:
         feats = np.expand_dims(feat, 0)
         feat_len = np.array([feat.shape[0]], dtype=np.int32)
 
-        tensor_batch_feat, tensor_batch_feat_len = move_to_tensor([feats, feat_len], self.config.device_id)
+        tensor_batch_feat, tensor_batch_feat_len = move_to_tensor(
+            [feats, feat_len], self.config.device_id)
 
-        tensor_batch_lprobs = self.am(tensor_batch_feat, tensor_batch_feat_len)
+        with torch.no_grad():
+            (lstm_outs, _), tensor_batch_lprobs = self.am(
+                tensor_batch_feat, 
+                tensor_batch_feat_len, 
+                return_both=True)
 
         if self.config.device_id >= 0:
             batch_lprobs = tensor_batch_lprobs.cpu().detach().numpy()
         else:
             batch_lprobs = tensor_batch_lprobs.detach().numpy()
+        
+        phone_tokens, emit_indices, phone_mask = self.lm.compute(
+            batch_lprobs[0], 
+            lang_id, 
+            topk, 
+            emit=emit, 
+            emit_blank=emit_blank,
+            all_frames=all_frames,
+            timestamp=timestamp)
 
-        token = self.lm.compute(batch_lprobs[0], lang_id, topk, emit=emit, timestamp=timestamp)
-        return token
+        self.phone_mask = phone_mask
+        
+        emit_frames = build_emit_frame(
+            self.lm.config.window_shift, 
+            self.lm.config.window_size,
+            emit_indices,
+            feats,
+            lstm_outs.transpose(1,0).numpy(),
+            batch_lprobs,
+            phone_tokens
+        )
+
+        return emit_frames
