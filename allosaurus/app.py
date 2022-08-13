@@ -63,7 +63,9 @@ class Recognizer:
         return self.lm.inventory.is_available(lang_id)
 
     def recognize(self, filename, lang_id='ipa', topk=1, 
-                  emit=1.0, all_frames=False, timestamp=False):
+                  emit=1.0, all_frames=False, 
+                  emit_blank=False,
+                  timestamp=False):
         # recognize a single file
 
         # filename check (skipping for BytesIO objects)
@@ -99,6 +101,7 @@ class Recognizer:
             lang_id, 
             topk, 
             emit=emit, 
+            emit_blank=emit_blank,
             all_frames=all_frames,
             timestamp=timestamp)
 
