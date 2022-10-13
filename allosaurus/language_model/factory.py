@@ -1,8 +1,8 @@
-from allosaurus.lm.decoder import PhoneDecoder
+from allosaurus.language_model.decoder import PhoneDecoder
 import json
 from argparse import Namespace
 
-def read_lm(model_path, inference_config):
+def read_language_model(model_path, inference_config):
     """
     read language model (phone inventory)
 

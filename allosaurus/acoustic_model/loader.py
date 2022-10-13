@@ -1,4 +1,4 @@
-from allosaurus.am.dataset import AllosaurusDataset
+from allosaurus.acoustic_model.dataset import AllosaurusDataset
 import numpy as np
 
 def read_loader(data_path, train_config):

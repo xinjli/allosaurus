@@ -1,6 +1,6 @@
 from pathlib import Path
-from allosaurus.lm.inventory import Inventory
-from allosaurus.lm.unit import write_unit
+from allosaurus.language_model.inventory import Inventory
+from allosaurus.language_model.unit import write_unit
 from allosaurus.model import get_model_path
 import argparse
 

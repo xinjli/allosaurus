@@ -2,8 +2,8 @@ import argparse
 from pathlib import Path
 from allosaurus.model import resolve_model_name
 from allosaurus.audio import read_audio
-from allosaurus.pm.factory import read_pm
-from allosaurus.pm.kdict import KaldiWriter
+from allosaurus.preprocess_model.factory import read_preprocess_model
+from allosaurus.preprocess_model.kdict import KaldiWriter
 from tqdm import tqdm
 
 def prepare_feature(data_path, model):
@@ -11,7 +11,7 @@ def prepare_feature(data_path, model):
     model_path = Path(__file__).parent.parent / 'pretrained' / model
 
     # create pm (pm stands for preprocess model: audio -> feature etc..)
-    pm = read_pm(model_path, None)
+    pm = read_preprocess_model(model_path, None)
 
     # data path should be pointing the absolute path
     data_path = data_path.absolute()
@@ -66,6 +66,3 @@ if __name__ == '__main__':
 
     # extract feature
     prepare_feature(data_path, args.model)
-
-
-

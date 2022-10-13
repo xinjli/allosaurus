@@ -1,7 +1,7 @@
-from allosaurus.am.utils import move_to_tensor, torch_save
-from allosaurus.am.criterion import read_criterion
-from allosaurus.am.optimizer import read_optimizer
-from allosaurus.am.reporter import Reporter
+from allosaurus.acoustic_model.utils import move_to_tensor, torch_save
+from allosaurus.acoustic_model.criterion import read_criterion
+from allosaurus.acoustic_model.optimizer import read_optimizer
+from allosaurus.acoustic_model.reporter import Reporter
 import editdistance
 import numpy as np
 import torch

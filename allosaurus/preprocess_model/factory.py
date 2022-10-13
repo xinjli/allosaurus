@@ -1,8 +1,8 @@
-from allosaurus.pm.mfcc import MFCC
+from allosaurus.preprocess_model.mfcc import MFCC
 import json
 from argparse import Namespace
 
-def read_pm(model_path, inference_config):
+def read_preprocess_model(model_path, inference_config):
     """
     read feature extraction model
 

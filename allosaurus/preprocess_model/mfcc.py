@@ -1,5 +1,5 @@
-from allosaurus.pm.feature import mfcc
-from allosaurus.pm.utils import *
+from allosaurus.preprocess_model.feature import mfcc
+from allosaurus.preprocess_model.utils import *
 from allosaurus.audio import resample_audio
 import numpy as np
 

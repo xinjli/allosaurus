@@ -1,4 +1,4 @@
-from allosaurus.lm.inventory import *
+from allosaurus.language_model.inventory import *
 from pathlib import Path
 from itertools import groupby
 import numpy as np

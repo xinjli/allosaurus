@@ -1,12 +1,12 @@
-from allosaurus.am.allosaurus_torch import AllosaurusTorchModel
-from allosaurus.am.utils import *
-from allosaurus.lm.inventory import Inventory
-from allosaurus.lm.unit import write_unit
+from allosaurus.acoustic_model.allosaurus_torch import AllosaurusTorchModel
+from allosaurus.acoustic_model.utils import *
+from allosaurus.language_model.inventory import Inventory
+from allosaurus.language_model.unit import write_unit
 import json
 from argparse import Namespace
 from allosaurus.model import get_model_path
 
-def read_am(model_path, inference_config):
+def read_acoustic_model(model_path, inference_config):
     """
     load pretrained acoustic model
 

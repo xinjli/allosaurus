@@ -15,5 +15,6 @@ setup(
       'panphon',
       'torch',
       'editdistance',
-   ]
+      'tqdm',
+   ],
 )

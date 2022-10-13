@@ -2,7 +2,7 @@
 # Author: James Lyons 2012
 
 import numpy
-from allosaurus.pm import preprocess
+from allosaurus.preprocess_model import preprocess
 from scipy.fftpack import dct
 
 def mfcc(signal,samplerate=16000,winlen=0.025,winstep=0.01,numcep=13,

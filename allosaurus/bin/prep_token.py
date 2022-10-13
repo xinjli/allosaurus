@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 from allosaurus.model import resolve_model_name
-from allosaurus.lm.inventory import *
+from allosaurus.language_model.inventory import *
 from tqdm import tqdm
 
 def prepare_token(data_path, model, lang_id):
