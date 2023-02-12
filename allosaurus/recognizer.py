@@ -8,12 +8,14 @@ from allosaurus.am.loader import read_audio_loader
 from allosaurus.utils.checkpoint_utils import find_topk_models
 from allosaurus.am.config import read_exp_config
 from allosaurus.am.lang2exp import lang2exp
+from allosaurus.bin.download_model import download_model
+from allosaurus.utils.model_utils import resolve_model_name, get_all_models
 from pathlib import Path
 import tqdm
 import torch
 
 
-def read_recognizer(lang_id):
+def read_recognizer(lang_id, alt_model_path=None):
 
     lang_id = normalize_lang_id(lang_id)
 
@@ -23,6 +25,9 @@ def read_recognizer(lang_id):
         exp_name = lang2exp['default']
 
     config = read_exp_config(exp_name)
+
+    # download target model if not exists in local
+    download_model(exp_name)
 
     am = read_am(config.am)
     best_model_path = find_topk_models(exp_name)[0]
