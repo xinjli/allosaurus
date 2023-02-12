@@ -1,0 +1,15 @@
+corpus_ids: [cmn_cvtrain, eng_cvtrain, deu_cvtrain]
+batch_size: 12
+am: xlsr_transformer
+ssl: wav2vec2_xlsr
+ssl_feature: hidden_states
+lm: phone
+pm: raw
+model_path: /ocean/projects/cis210027p/xinjianl/asr2k/allospeech/allospeech/data/arch
+gpu_size: 1
+lr_rate: 0.05
+epoch: 200
+grad_clip: 2.0
+report_per_batch: 10
+eval_per_epoch: False
+eval_per_second: 3600

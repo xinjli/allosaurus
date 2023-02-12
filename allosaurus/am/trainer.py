@@ -1,194 +1,273 @@
-from allosaurus.am.utils import move_to_tensor, torch_save
-from allosaurus.am.criterion import read_criterion
-from allosaurus.am.optimizer import read_optimizer
-from allosaurus.am.reporter import Reporter
-import editdistance
-import numpy as np
-import torch
-from itertools import groupby
-from allosaurus.model import get_model_path
-import os
-import json
+from allosaurus.utils.reporter import *
+from allosaurus.utils.config import write_config
+from allosaurus.utils.checkpoint_utils import *
+from pathlib import Path
+import torch.distributed as dist
+from allosaurus.utils.meters import *
+from torch.optim import Adadelta, Adam, SGD
+from allosaurus.config import allosaurus_config
+import time
+
 
 class Trainer:
 
-    def __init__(self, model, train_config):
+    def __init__(self, model, config):
 
-        self.model = model
-        self.train_config = train_config
+        reporter.init_trainer(config)
 
-        self.device_id = self.train_config.device_id
+        self.config = config
 
-        # criterion, only ctc currently
-        self.criterion = read_criterion(train_config)
+        # setup model_path
+        if hasattr(self.config, "model_path") and self.config.model_path and self.config.model_path != "none":
+            self.model_path = self.config.model_path
 
-        # optimizer, only sgd currently
-        self.optimizer = read_optimizer(self.model, train_config)
+            if self.config.rank == 0:
+                print(config)
+                write_config(config, Path(self.model_path) / 'am.yml')
 
-        # reporter to write logs
-        self.reporter = Reporter(train_config)
+        else:
+            self.model_path = "none"
 
-        # best per
-        self.best_per = 100.0
+        # number of no improvements
+        self.num_no_improve = 0
 
-        # intialize the model
-        self.model_path = get_model_path(train_config.new_model)
+        # accuracy for best arch
+        self.best_ter = 3.14159265358979323846
 
-        # counter for early stopping
-        self.num_no_improvement = 0
+        # move to cuda first
+        if self.config.ngpu == 1:
+            self.cuda = True
+            self.model = model.cuda()
+            self.model.device_id = 0
+            reporter.success("moved arch and criterion to cuda")
+
+        elif self.config.ngpu > 1:
+            self.cuda = True
+            self.model = model.distribute()
+            reporter.success("distributed arch and criterion to cuda")
+
+        else:
+            self.cuda = False
+            self.model = model
+
+        # optimizer
+        if "optimizer" in self.config:
+            if self.config.optimizer == 'adadelta':
+                reporter.success("using adadelta lr: "+str(self.config.lr_rate))
+                self.optimizer = Adadelta(self.model.model.parameters(), lr=self.config.lr_rate, eps=1e-8,weight_decay=0.0)
+            elif self.config.optimizer == 'adam':
+                reporter.success("using adam lr: "+str(self.config.lr_rate))
+                self.optimizer = Adam(self.model.model.parameters(), lr=self.config.lr_rate)
+            elif self.config.optimizer == 'sgd':
+                reporter.success("using sgd lr:"+str(self.config.lr_rate))
+                self.optimizer = SGD(self.model.model.parameters(), lr=self.config.lr_rate)
+        else:
+            reporter.success("using default sgd lr:"+str(self.config.lr_rate))
+            self.optimizer = SGD(self.model.model.parameters(), lr=self.config.lr_rate)
+
+        # store the steps
+        self.validate_iter = 0
+        self.train_iter = 0
+
+        # restore the arch
+        if 'load_model'in config and config.load_model != 'none':
+            reporter.info("Restoring " + str(self.config.load_model))
+            torch_load(self.model.model, self.config.load_model)
+        else:
+            # load the pretrained ssl arch
+            if 'ssl' in self.model.model.frontend.config and self.model.model.frontend.config.ssl == 'xlsr':
+                reporter.info("loading xlsr_53_56k.pt")
+                ckpt_state = torch.load(allosaurus_config.model_path / 'xlsr_53_56k.pt', map_location="cpu")
+                self.model.model.frontend.model.load_state_dict(ckpt_state["model_weight"])
+
+    def train(self, train_loader, cv_loader):
+
+        # time stats
+        start_time = time.time()
+        prev_eval_time_stamp = start_time
+
+        reporter.info(f"Total epoch {self.config.epoch}", True)
+        reports = []
+
+        if hasattr(self.config, "eval_first") and self.config.eval_first:
+            reporter.info("evaluate first")
+            self.validate(cv_loader)
 
 
-    def sum_edit_distance(self, output_ndarray, output_lengths_ndarray, token_ndarray, token_lengths_ndarray):
-        """
-        compute SUM of ter in this batch
+        iter_time = 0
+        train_time = 0
 
-        """
+        for ii in range(self.config.epoch):
 
-        error_cnt_sum = 0.0
+            train_iterator = iter(train_loader)
+            iteration = len(train_iterator)
 
-        for i in range(len(token_lengths_ndarray)):
-            target_list = token_ndarray[i, :token_lengths_ndarray[i]].tolist()
-            logit = output_ndarray[i][:output_lengths_ndarray[i]]
+            # sample = next(train_iterator)
 
-            raw_token = [x[0] for x in groupby(np.argmax(logit, axis=1))]
-            decoded_token = list(filter(lambda a: a != 0, raw_token))
+            # training steps
+            for i in range(iteration):
 
-            error_cnt_sum += editdistance.distance(target_list, decoded_token)
-
-        return error_cnt_sum
-
-
-    def step(self, feat_batch, token_batch):
-
-        # prepare torch tensors from numpy arrays
-        feat_tensor, feat_lengths_tensor = move_to_tensor(feat_batch, self.device_id)
-        token_tensor, token_lengths_tensor = move_to_tensor(token_batch, self.device_id)
-
-        #print(feat_tensor)
-        #print(feat_lengths_tensor)
-        output_tensor = self.model(feat_tensor, feat_lengths_tensor)
-
-        #print(output_tensor)
-        #print(token_tensor)
-        #print(token_lengths_tensor)
-
-        loss = self.criterion(output_tensor, feat_lengths_tensor, token_tensor, token_lengths_tensor)
-        #print(loss.item())
-
-        # extract numpy format for edit distance computing
-        output_ndarray = output_tensor.cpu().detach().numpy()
-        feat_ndarray, feat_lengths_ndarray = feat_batch
-        token_ndarray, token_lengths_ndarray = token_batch
-
-        phone_error_sum = self.sum_edit_distance(output_ndarray, feat_lengths_ndarray, token_ndarray,
-                                                 token_lengths_ndarray)
-
-        phone_count = sum(token_lengths_ndarray)
-
-        return loss, phone_error_sum, phone_count
-
-
-    def train(self, train_loader, validate_loader):
-
-        self.best_per = 100.0
-
-        batch_count = len(train_loader)
-
-        for epoch in range(self.train_config.epoch):
-
-            # shuffle
-            train_loader.shuffle()
-
-            # set to the training mode
-            self.model.train()
-
-            # reset all stats
-            all_phone_count = 0.0
-            all_loss_sum = 0.0
-            all_phone_error_sum = 0.0
-
-            # training loop
-            for ii in range(batch_count):
+                #cur_time = time.time()
+                sample = next(train_iterator)
+                #iter_time += time.time()-cur_time
 
                 self.optimizer.zero_grad()
 
-                feat_batch, token_batch = train_loader.read_batch(ii)
+                #cur_time = time.time()
+                report = self.model.train_step(sample)
+                #train_time += time.time() - cur_time
 
-                # forward step
-                loss_tensor, phone_error_sum, phone_count = self.step(feat_batch, token_batch)
+                reports.append(report)
 
-                # backprop and optimize
-                loss_tensor.backward()
-
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.train_config.grad_clip)
+                torch.nn.utils.clip_grad_norm_(self.model.model.parameters(), self.config.grad_clip)
 
                 self.optimizer.step()
 
-                # update stats
-                loss_sum = loss_tensor.item()
-                all_phone_count += phone_count
-                all_loss_sum += loss_sum
-                all_phone_error_sum += phone_error_sum
+                cur_time = time.time()
 
-                if ii % self.train_config.report_per_batch == 0:
-                    message = f'epoch[batch]: {epoch:02d}[{ii:04d}] | train loss {all_loss_sum/all_phone_count:0.5f} train per {all_phone_error_sum / all_phone_count:0.5f}'
-                    self.reporter.write(message)
+                # write ler to stdout for rank 0
+                if i % self.config.report_per_batch == 0:
 
-                    # reset all stats
-                    all_phone_count = 0.0
-                    all_loss_sum = 0.0
-                    all_phone_error_sum = 0.0
+                    elapsed_time = cur_time - start_time
+                    elapsed_time_from_last_epoch = cur_time - prev_eval_time_stamp
+
+                    report, _ = self.model.reduce_report(reports)
+
+                    total_token_size = report['total_token_size']
+                    average_loss = report['average_loss']
+                    average_ter = report['average_ter']
+                    reports = []
+
+                    cost_time = time.strftime("%H:%M", time.gmtime(elapsed_time))
+                    message = 'time {} epoch {} ({:08d}|{:08d}) speed: {:.2f} loss {:.6f} ter: {:.6f}'.format(cost_time, ii, i,
+                                iteration, total_token_size/elapsed_time_from_last_epoch, average_loss, average_ter)
+
+                    reporter.info(message)
+                    #print('train time: ', train_time / iteration, ' prep time: ', iter_time / iteration)
+                    #print(list(self.arch.arch.named_parameters()))
+                    #print(self.arch.arch.embed.weight)
+
+                    reporter.add_scalar('Train/Loss', average_loss, self.train_iter)
+                    reporter.add_scalar('Train/TER', average_ter, self.train_iter)
+
+                    self.train_iter += 1
+
+                # evaluation and dump after every constant period
+                if (not self.config.eval_per_epoch) and (cur_time - prev_eval_time_stamp >= self.config.eval_per_second):
+
+                    # update time
+                    prev_eval_time_stamp = time.time()
+
+                    if self.validate(cv_loader):
+                        reporter.success("training finish")
+                        return True
+
+            # evaluation and dump after every constant period
+            if self.config.eval_per_epoch:
+
+                # update time
+                prev_eval_time_stamp = time.time()
+
+                if self.validate(cv_loader):
+                    reporter.success("training finish")
+                    return True
+
+            #reporter.info(f"end epoch {ii}")
+
+        reporter.success("all epoch done")
+
+        return True
+
+    def validate(self, cv_loader):
+
+        reporter.info("------------------------------start validation--------------------------------------------------")
+
+        iterator = iter(cv_loader)
+
+        iteration = len(iterator)
+
+        reports = []
+
+        for i in range(iteration):
+
+            sample = next(iterator)
+
+            report = self.model.validate_step(sample)
+            reports.append(report)
+
+            if i % self.config.report_per_batch == 0:
+                reporter.info('Validating ... ({:08d}|{:08d})'.format(i, iteration))
+
+        total_report, corpus_report = self.model.reduce_report(reports)
+
+        for corpus_id, report in corpus_report.items():
+
+            average_ter  = report['average_ter']
+            average_loss = report['average_loss']
+
+            reporter.add_scalar("Validate/TER/"+corpus_id, average_ter, self.validate_iter)
+            reporter.add_scalar("Validate/Loss/"+corpus_id, average_loss, self.validate_iter)
+
+            message = "{:<20}  Validation TER: {}".format(corpus_id, average_ter, self.validate_iter)
+            reporter.info(message)
+
+        finish = False
+
+        ter_ave = total_report['average_ter']
+
+        message = "Average Validation TER: {}".format(ter_ave)
+        reporter.success(message)
+
+        reporter.add_scalar("Validate/TER", ter_ave, self.validate_iter)
+        self.validate_iter += 1
+
+        if ter_ave > self.best_ter:
+            self.num_no_improve += 1
+
+            # stop training if no improvement twice
+            if self.num_no_improve >= 2 and self.config.nonstop == False:
+                reporter.success("Stop training")
+                finish = True
+
+        # save arch on rank 0 if it is a better arch
+        if ter_ave <= self.best_ter:
+            # update best accuracy
+            self.best_ler = ter_ave
+
+            # restart no improve count
+            self.num_no_improve = 0
+
+            if self.model_path != 'none' and self.config.rank == 0:
+                # save arch
+                model_path = Path(self.model_path) / ("model_{:0.6f}.pt".format(ter_ave))
+
+                torch_save(self.model.model, model_path)
+                reporter.success(f"saved arch: {str(model_path)}")
 
 
-            # evaluate this model
-            validate_phone_error_rate = self.validate(validate_loader)
+        if self.config.world_size > 1:
+            reporter.success(f"before barrier")
+            dist.barrier()
+            reporter.success(f"after barrier")
 
-            self.reporter.write(f"epoch{epoch} | validate per : {validate_phone_error_rate:0.5f}")
-            if validate_phone_error_rate <= self.best_per:
-                self.best_per = validate_phone_error_rate
-                self.num_no_improvement = 0
-                self.reporter.write("saving model")
+        # whether train should stop or not
+        return finish
 
-                model_name = f"model_{validate_phone_error_rate:0.5f}.pt"
+    def test(self, test_loader):
 
-                # save model
-                torch_save(self.model, self.model_path / model_name)
+        iterator = iter(test_loader)
 
-                # overwrite the best model
-                torch_save(self.model, self.model_path / 'model.pt')
+        iteration = len(iterator)
 
-            else:
-                self.num_no_improvement += 1
+        reports = []
 
-                if self.num_no_improvement >= 3:
-                    self.reporter.write("no improvements for several epochs, early stopping now")
-                    break
+        for i in range(iteration):
 
-        # close reporter stream
-        self.reporter.close()
+            sample = next(iterator)
+
+            report = self.model.test_step(sample)
 
 
-    def validate(self, validate_loader):
 
-        self.model.eval()
-
-        batch_count = len(validate_loader)
-
-        all_phone_error_sum = 0
-        all_phone_count = 0
-
-        # validation loop
-        for ii in range(batch_count):
-
-            self.optimizer.zero_grad()
-
-            feat_batch, token_batch = validate_loader.read_batch(ii)
-
-            # one step
-            loss_tensor, phone_error_sum, phone_count = self.step(feat_batch, token_batch)
-
-            # update stats
-            all_phone_error_sum += phone_error_sum
-            all_phone_count += phone_count
-
-        return all_phone_error_sum/all_phone_count
+        # whether train should stop or not
+        return finish

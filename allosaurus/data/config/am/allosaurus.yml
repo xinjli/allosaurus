@@ -1,0 +1,29 @@
+model: allosaurus
+criterion: ctc
+feat_size: 40
+hidden_size: 512
+pos_only: true
+proj_size: 0
+layer_size: 4
+l2: 0
+langs: ['eng', 'cmn', 'deu', 'fra', 'ita', 'rus', 'tur', 'vie']
+input_size: 40
+in_channel: 1
+mid_channel: 64
+out_channel: 128
+kernel_size: [[3,3],[3,3]]
+stride: [2, 2]
+dropout: 0.0
+act_func_type: relu
+front_end_layer_norm: False
+head_size: 4
+d_ff: 2048
+block_size: 12
+pos_dropout: 0.0
+slf_attn_dropout: 0.0
+ffn_dropout: 0.0
+residual_dropout: 0.1
+normalize_before: false,
+concat_after: false
+relative_positional: false
+activation: glu

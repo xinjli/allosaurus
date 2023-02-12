@@ -1,0 +1,14 @@
+corpus_ids: [cmn_cvtrain,deu_cvtrain,eng_cvtrain,fra_cvtrain,ita_cvtrain,rus_cvtrain,tur_cvtrain,vie_cvtrain]
+batch_size: 12
+am: xlsr_transformer
+ssl: wav2vec2_xlsr
+ssl_feature: hidden_states
+lm: phone
+pm: raw
+gpu_size: 1
+lr_rate: 0.01
+epoch: 200
+grad_clip: 2.0
+report_per_batch: 10
+eval_per_epoch: False
+eval_per_second: 3600

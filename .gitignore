@@ -129,5 +129,6 @@ dmypy.json
 .pyre/
 .idea/
 allosaurus/pretrained/*
+allosaurus/data/model/*
 allosaurus.egg-info
 test_model/*

@@ -35,8 +35,9 @@ python -m allosaurus.run -i sample.wav
 ```
 
 You can also use allosaurus directly in python
+
 ```python
-from allosaurus.app import read_recognizer
+from allosaurus.recognizer import read_recognizer
 
 # load your model
 model = read_recognizer()
@@ -57,8 +58,9 @@ It will recognize the narrow phones in the audio file(s).
 Only the input argument is mandatory, other options can ignored. Please refer to following sections for their details. 
 
 There is also a simple python interface as follows:
+
 ```python
-from allosaurus.app import read_recognizer
+from allosaurus.recognizer import read_recognizer
 
 # load your model by the <model name>, will use 'latest' if left empty
 model = read_recognizer(model)

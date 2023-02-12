@@ -13,46 +13,46 @@ def read_unit(unit_path):
     for line in open(str(unit_path), 'r', encoding='utf-8'):
         fields = line.strip().split()
 
-        assert len(fields) < 3, " each line should contain at most two field separated by space."
+        assert len(fields) < 3
 
-        # this is simple format
         if len(fields) == 1:
             unit = fields[0]
             idx += 1
         else:
-            # this is kaldi format
             unit = fields[0]
             idx = int(fields[1])
 
-        assert unit not in unit_to_id, "there are duplicate phones."
         unit_to_id[unit] = idx
 
     unit = Unit(unit_to_id)
     return unit
 
-def write_unit(unit, unit_path, format='kaldi'):
-    """
-    dump units to file
 
-    :param unit:
-    :param unit_path:
-    :return:
-    """
 
-    # unit can be either kaldi format (each line contain two field phone and index) or
-    # the simple format (each line contains only phone)
-    assert format in ['kaldi', 'simple']
+def write_unit(unit, unit_path):
 
     w = open(str(unit_path), 'w', encoding='utf-8')
     for i in range(1, len(unit.id_to_unit)):
         u = unit.id_to_unit[i]
-
-        if format == 'kaldi':
-            w.write(u+' '+str(i)+'\n')
-        else:
-            w.write(u+'\n')
+        w.write(u+' '+str(i)+'\n')
 
     w.close()
+
+
+def create_unit(unit_lst):
+
+    unit_to_id = dict()
+
+    unit_to_id['<blk>'] = 0
+
+    idx = 0
+
+    for i, unit in enumerate(sorted(unit_lst)):
+        unit_to_id[unit] = i+1
+
+    unit = Unit(unit_to_id)
+    return unit
+
 
 class Unit:
 
@@ -90,6 +90,18 @@ class Unit:
 
         return unit in self.unit_to_id
 
+    def __eq__(self, other):
+        """
+        compare whether two units are equivalent or not
+
+        :param other:
+        :type other:
+        :return:
+        :rtype:
+        """
+        return set(self.unit_to_id.keys()) == set(other.unit_to_id.keys())
+
+
     def get_id(self, unit):
 
         # handle special units
@@ -109,7 +121,7 @@ class Unit:
         return [self.get_id(unit) for unit in units]
 
     def get_unit(self, id):
-        assert id >= 0 and id in self.id_to_unit
+        assert id >= 0 and id in self.id_to_unit, str(id)+" not in "+str(self.id_to_unit)
 
         unit = self.id_to_unit[id]
 

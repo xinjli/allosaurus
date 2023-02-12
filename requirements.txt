@@ -6,3 +6,7 @@ torch
 editdistance
 requests
 tqdm
+loguru
+torchaudio
+phonepiece
+transphone

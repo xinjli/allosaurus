@@ -1,118 +1,130 @@
-from allosaurus.am.dataset import AllosaurusDataset
 import numpy as np
-
-def read_loader(data_path, train_config):
-    """
-    create a dataloader for data_path
-
-    :param data_path:
-    :param train_config:
-    :return:
-    """
-
-    return AllosaurusLoader(data_path, train_config)
+from allosaurus.dataset import read_dataset
+from torch.utils.data import DataLoader
+import torch.nn.functional as F
+from allosaurus.utils.tensor import pad_list
+import torch
 
 
-class AllosaurusLoader:
+def collate_feat(utt_dict_lst, pm_config):
 
-    def __init__(self, data_path, train_config):
+    feat_lens = [len(utt_dict['feats']) for utt_dict in utt_dict_lst]
+    T = max(feat_lens)
 
-        self.train_config = train_config
+    padded_feats = []
 
-        self.dataset = AllosaurusDataset(data_path)
+    if pm_config.model != 'raw':
+        for i, utt_dict in enumerate(utt_dict_lst):
+            feat = utt_dict['feats']
+            feat_len = feat.shape[0]
+            padding_feat_len = T - feat_len
+            padded_feats.append(F.pad(feat, pad=(0, 0, 0, padding_feat_len), value=0.0).unsqueeze(0))
 
-        self.batch_lst = []
-
-        self._prepare_batch()
-
-    def __len__(self):
-        return len(self.batch_lst)
-
-    def close(self):
-        self.dataset.close()
-
-    def shuffle(self):
-        np.random.shuffle(self.batch_lst)
-
-    def read_batch(self, batch_idx):
-        assert batch_idx < len(self.batch_lst), "batch_idx "+str(batch_idx)+" is too large!!"
-
-        batch = self.batch_lst[batch_idx]
-
-        return self._collate_batch(batch)
-
-    def _collate_batch(self, batch):
+        feats = torch.cat(padded_feats, dim=0)
+        feat_lens = torch.IntTensor(feat_lens)
+    else:
 
         feat_lst = []
-        token_lst = []
+        feat_lens = []
 
-        for idx in batch:
-            feat, token = self.dataset[idx]
+        for i, utt_dict in enumerate(utt_dict_lst):
+            feat = utt_dict['feats']
+            feat_len = feat.shape[0]
             feat_lst.append(feat)
-            token_lst.append(token)
+            feat_lens.append(feat_len)
 
-        feat, feat_lengths = self._collate_feat(feat_lst)
-        token, token_lengths = self._collate_token(token_lst)
+        feats = pad_list(feat_lst, 0)
+        feat_lens = torch.IntTensor(feat_lens)
 
-        return (feat, feat_lengths), (token, token_lengths)
-
-    def _collate_feat(self, feat_lst):
-
-        batch_size = len(feat_lst)
-        frame_size = feat_lst[0].shape[0]
-        feat_size = feat_lst[0].shape[1]
-
-        # collate feats
-        feat_lengths = np.zeros(batch_size, dtype=np.int32)
-        feat_tensor = np.zeros([batch_size, frame_size, feat_size], dtype=np.float32)
-        for i, feat in enumerate(feat_lst):
-
-            feat_tensor[i,:len(feat)] = feat
-            feat_lengths[i] = len(feat)
-
-        return feat_tensor, feat_lengths
+    return feats, feat_lens
 
 
-    def _collate_token(self, token_lst):
+def collate_lang(utt_dict_lst, config):
+    B = len(utt_dict_lst)
+    T = max(len(utt_dict['langs']) for utt_dict in utt_dict_lst)
 
-        batch_size = len(token_lst)
-        token_size = max([len(token) for token in token_lst])
+    lang = torch.zeros(B, T, dtype=torch.int64)
 
-        token_tensor = np.zeros([batch_size, token_size], dtype=np.int32)
-        token_lengths = np.zeros(batch_size, dtype=np.int32)
+    lang_lens = []
 
-        for i, token in enumerate(token_lst):
-            token_tensor[i, :len(token)] = token
-            token_lengths[i] = len(token)
+    for i, utt_dict in enumerate(utt_dict_lst):
+        token_ids = utt_dict['langs']
 
-        return token_tensor, token_lengths
+        # target
+        target_len = len(token_ids)
+        lang[i, :target_len] = token_ids[:target_len]
+
+        # target length
+        lang_lens.append(target_len)
+
+    lang_lens = torch.IntTensor(lang_lens)
+
+    return lang, lang_lens
 
 
-    def _prepare_batch(self):
+def collate_feats_langs(raw_utt_dict_lst):
 
-        batch = []
-        batch_frame_size = 0
+    utt_dict_lst = []
 
-        for i in range(len(self.dataset)):
-            utt_id = self.dataset.utt_ids[i]
+    pm_config = raw_utt_dict_lst[0]['pm']
+    lm_config = raw_utt_dict_lst[0]['lm']
 
-            frame_size = self.dataset.utt2shape[utt_id][0]
+    # filtering
+    for utt_dict in raw_utt_dict_lst:
+        lang_length = len(utt_dict['langs'])
+        feat_length = len(utt_dict['feats'])
 
-            # batch frame is large enough
-            if batch_frame_size + frame_size >= self.train_config.batch_frame_size:
+        if lang_length > 500 or lang_length * 2 + 1 >= feat_length:
+            continue
 
-                # commit current batch to the list
-                self.batch_lst.append(batch)
+        if pm_config.model != 'raw' and feat_length > 2000:
+            print("deleting > 2000 ", pm_config)
+            continue
 
-                # reset frame size
-                batch_frame_size = 0
+        if pm_config.model == 'raw' and feat_length > 160000:
+            #print("deleting samples > 160000 ", feat_length)
+            continue
 
-                # reset batch
-                batch = []
+        assert utt_dict['corpus_id'] == raw_utt_dict_lst[0]['corpus_id'], "corpus id inconsistent!"
 
-            batch_frame_size += frame_size
-            batch.append(i)
+        utt_dict_lst.append(utt_dict)
 
-        # commit the last batch if it is a valid batch
-        if len(batch) > 0 and batch_frame_size < self.train_config.batch_frame_size:
-            self.batch_lst.append(batch)
+    utt_ids = [utt_dict['utt_id'] for utt_dict in utt_dict_lst]
+    batch_dict = {'utt_ids': utt_ids}
+
+    batch_dict['feats'] = collate_feat(utt_dict_lst, pm_config)
+    batch_dict['langs'] = collate_lang(utt_dict_lst, lm_config)
+
+    # meta data for this batch
+    meta = {}
+    meta['lang_id'] = utt_dict_lst[0]['lang_id']
+    meta['corpus_id'] = utt_dict_lst[0]['corpus_id']
+    batch_dict['meta'] = meta
+
+    return batch_dict
+
+def collate_feats(utt_dict_lst):
+
+    pm_config = utt_dict_lst[0]['pm']
+
+    utt_ids = [utt_dict['utt_id'] for utt_dict in utt_dict_lst]
+    batch_dict = {'utt_ids': utt_ids}
+    batch_dict['feats'] = collate_feat(utt_dict_lst, pm_config)
+
+    # meta data for this batch
+    meta = {}
+    batch_dict['meta'] = meta
+
+    return batch_dict
+
+
+def read_loader(corpus_path, pm_config_or_name, lm_config_or_name, batch_size=16):
+
+    dataset = read_dataset(corpus_path, pm_config_or_name, lm_config_or_name)
+    return DataLoader(dataset, batch_size=batch_size, collate_fn=collate_feats_langs, num_workers=8)
+
+
+def read_audio_loader(corpus_path, pm_config_or_name, batch_size=16):
+
+    dataset = read_dataset(corpus_path, pm_config_or_name, lm_config_or_name=None)
+    return DataLoader(dataset, batch_size=batch_size, collate_fn=collate_feats)

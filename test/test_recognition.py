@@ -1,6 +1,6 @@
 import unittest
 from pathlib import Path
-from allosaurus.app import read_recognizer
+from allosaurus.recognizer import read_recognizer
 
 class TestRecognition(unittest.TestCase):
 
