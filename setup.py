@@ -8,6 +8,7 @@ setup(
    author_email='xinjianl@cs.cmu.edu',
    url="https://github.com/xinjli/allosaurus",
    packages=find_packages(),
+   package_data={'': ['*.yml', '*.csv']},
    install_requires=[
       'scipy',
       'numpy',
