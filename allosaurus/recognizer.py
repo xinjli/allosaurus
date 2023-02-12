@@ -13,16 +13,22 @@ from allosaurus.utils.model_utils import resolve_model_name, get_all_models
 from pathlib import Path
 import tqdm
 import torch
+import faulthandler; faulthandler.enable()
 
 
-def read_recognizer(lang_id, alt_model_path=None):
+def read_recognizer(lang_id_or_exp_name='ipa', alt_model_path=None):
 
-    lang_id = normalize_lang_id(lang_id)
+    if len(lang_id_or_exp_name) <= 3:
+        lang_id = lang_id_or_exp_name
+        lang_id = normalize_lang_id(lang_id)
 
-    if lang_id in lang2exp:
-        exp_name = lang2exp[lang_id]
+        if lang_id in lang2exp:
+            exp_name = lang2exp[lang_id]
+        else:
+            exp_name = lang2exp['default']
     else:
-        exp_name = lang2exp['default']
+        exp_name = lang_id_or_exp_name
+        lang_id = 'ipa'
 
     config = read_exp_config(exp_name)
 
@@ -44,27 +50,9 @@ def read_recognizer(lang_id, alt_model_path=None):
     return Recognizer(am, pm, lm, lang_id)
 
 
-def read_recognizer_by_exp(exp_name):
-
-    config = read_exp_config(exp_name)
-
-    am = read_am(config.am)
-    best_model_path = find_topk_models(exp_name)[0]
-    torch_load(am.model, best_model_path)
-
-    if torch.cuda.is_available():
-        am.model.cuda()
-    else:
-        am.device_id = -1
-
-    lm = read_lm(config.lm)
-    pm = read_pm(config.pm)
-
-    return Recognizer(am, pm, lm)
-
 class Recognizer:
 
-    def __init__(self, am, pm, lm, lang_id='eng'):
+    def __init__(self, am, pm, lm, lang_id='ipa'):
 
         self.am = am
         self.pm = pm
@@ -98,7 +86,10 @@ class Recognizer:
         token = self.lm.decode(decoded_tokens[0], lang_id)
         return ' '.join(token)
 
-    def recognize_batch(self, audio_path, lang_id, output_dir):
+    def recognize_batch(self, audio_path, output_dir, lang_id=None):
+
+        if lang_id is None:
+            lang_id = self.default_lang_id
 
         audio_loader = read_audio_loader(audio_path, self.pm)
 
@@ -130,7 +121,10 @@ class Recognizer:
             w.write(utt_id+' '+' '.join(token)+'\n')
         w.close()
 
-    def get_logits_batch(self, audio_path, lang_id):
+    def get_logits_batch(self, audio_path, lang_id=None):
+
+        if lang_id is None:
+            lang_id = self.default_lang_id
 
         audio_loader = read_audio_loader(audio_path, self.pm)
 
@@ -161,7 +155,10 @@ class Recognizer:
 
         return logits, tokens
 
-    def get_logits(self, filename, lang_id='ipa'):
+    def get_logits(self, filename, lang_id=None):
+
+        if lang_id is None:
+            lang_id = self.default_lang_id
 
         # load wav audio
         audio = read_audio(filename, self.pm.config.sample_rate)
@@ -181,3 +178,6 @@ class Recognizer:
         token = self.lm.decode(decoded_tokens[0], lang_id)
 
         return output, token
+
+if __name__ == '__main__':
+    rec = read_recognizer('eng')

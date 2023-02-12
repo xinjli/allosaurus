@@ -11,8 +11,6 @@ setup(
    install_requires=[
       'scipy',
       'numpy',
-      'resampy',
-      'panphon',
       'torch',
       'editdistance',
    ]
