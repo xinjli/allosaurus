@@ -86,12 +86,12 @@ class Recognizer:
         token = self.lm.decode(decoded_tokens[0], lang_id)
         return ' '.join(token)
 
-    def recognize_batch(self, audio_path, output_dir, lang_id=None):
+    def recognize_batch(self, audio_path, output_dir, lang_id=None, batch_size=16):
 
         if lang_id is None:
             lang_id = self.default_lang_id
 
-        audio_loader = read_audio_loader(audio_path, self.pm)
+        audio_loader = read_audio_loader(audio_path, self.pm, batch_size=batch_size)
 
         audio_iterator = iter(audio_loader)
         iteration = len(audio_iterator)
@@ -121,12 +121,12 @@ class Recognizer:
             w.write(utt_id+' '+' '.join(token)+'\n')
         w.close()
 
-    def get_logits_batch(self, audio_path, lang_id=None):
+    def get_logits_batch(self, audio_path, lang_id=None, batch_size=16):
 
         if lang_id is None:
             lang_id = self.default_lang_id
 
-        audio_loader = read_audio_loader(audio_path, self.pm)
+        audio_loader = read_audio_loader(audio_path, self.pm, batch_size=batch_size)
 
         audio_iterator = iter(audio_loader)
         iteration = len(audio_iterator)

@@ -9,3 +9,5 @@ loguru
 torchaudio
 phonepiece
 transphone
+loguru
+tensorboard
