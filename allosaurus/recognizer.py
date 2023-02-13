@@ -148,7 +148,7 @@ class Recognizer:
                 tokens.append((utt_id, token))
 
             for utt_id, logit in zip(sample['utt_ids'], outputs):
-                logits.append((utt_id, logit))
+                logits.append((utt_id, logit.cpu().detach().numpy()))
 
         tokens.sort(key=lambda x: x[0])
         logits.sort(key=lambda x: x[0])

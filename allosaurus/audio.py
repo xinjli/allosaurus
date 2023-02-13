@@ -89,7 +89,7 @@ def write_audio(audio, filename):
     # augment the channel dim
     samples = audio.samples.unsqueeze(0)
 
-    torchaudio.save(str(filename), samples, audio.sample_rate)
+    torchaudio.save(str(filename), samples, sample_rate=audio.sample_rate, bits_per_sample=16, encoding='PCM_S')
 
 
 def random_audio(sample_size, sample_rate):
