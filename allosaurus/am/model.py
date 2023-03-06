@@ -176,17 +176,30 @@ class AcousticModel:
 
         output, output_length = self.model(feat, feat_length, meta)
 
+        emit = 1.0
+
+        if 'emit' in sample:
+            emit = sample['emit']
+
+        timestamp = False
+        if 'timestamp' in sample:
+            timestamp = sample['timestamp']
+
+        topk = 1
+        if 'topk' in sample:
+            topk = sample['topk']
+
         if format == 'logit':
             return output
         elif format == 'both':
-            decoded_tokens = self.decode(output, output_length)
-            return output, decoded_tokens
+            decoded_info = self.decode(output, output_length, topk, emit)
+            return output, decoded_info
 
         else:
-            decoded_tokens = self.decode(output, output_length)
+            decoded_info = self.decode(output, output_length, topk, emit)
             # corpus_id = sample['meta']['corpus_id']
 
-            return decoded_tokens
+            return decoded_info
 
     def reduce_report(self, reports):
 
@@ -245,8 +258,6 @@ class AcousticModel:
 
             raw_token = [x[0] for x in groupby(np.argmax(logit, axis=1))]
             decoded_token = list(filter(lambda a: a != 0, raw_token))
-            #print('target ', target)
-            #print('decoded_token ', decoded_token)
 
             error = editdistance.distance(target, decoded_token)
 
@@ -255,21 +266,70 @@ class AcousticModel:
 
         return error_cnt, total_cnt
 
-    def decode(self, output, output_length):
+    def decode(self, output, output_length, topk=1, emit=1.0):
 
         logits = move_to_ndarray(output)
         logits_length = move_to_ndarray(output_length)
 
         assert len(logits) == len(logits_length)
 
-        decoded_tokens = []
+        decoded_lst = []
 
-        for i in range(len(logits)):
+        for ii in range(len(logits)):
 
-            logit  = logits[i][:logits_length[i]]
+            logit = logits[ii][:logits_length[ii]]
 
-            raw_token = [x[0] for x in groupby(np.argmax(logit, axis=1))]
-            decoded_token = list(filter(lambda a: a != 0, raw_token))
-            decoded_tokens.append(decoded_token)
+            emit_frame_idx = []
 
-        return decoded_tokens
+            cur_max_arg = -1
+
+            # find all emitting frames
+            for i in range(len(logit)):
+
+                frame = logit[i]
+                frame[0] /= emit
+
+                arg_max = np.argmax(frame)
+
+                # this is an emitting frame
+                if arg_max != cur_max_arg and arg_max != 0:
+                    emit_frame_idx.append(i)
+                    cur_max_arg = arg_max
+
+            # decode all emitting frames
+            decoded_seq = []
+
+            for i, idx in enumerate(emit_frame_idx):
+                frame = logit[idx]
+
+                if i == len(emit_frame_idx) - 1:
+                    next_idx = len(logit)-1
+                else:
+                    next_idx = emit_frame_idx[i+1]
+
+                exp_prob = np.exp(frame - np.max(frame))
+                probs = exp_prob / exp_prob.sum()
+
+                top_phones = frame.argsort()[-topk:][::-1]
+                top_probs = sorted(probs)[-topk:][::-1]
+
+                start_timestamp = self.config.window_shift * idx
+                end_timestamp = self.config.window_shift * next_idx
+                duration = min(1.0, end_timestamp - start_timestamp)
+
+                info = {'start': self.config.window_shift * idx,
+                        'duration': duration,
+                        'phone_id': top_phones[0],
+                        'prob': top_probs[0],
+                        'alternative_ids': top_phones[:topk].tolist(),
+                        'alternative_probs': top_probs[:topk]}
+
+                decoded_seq.append(info)
+
+            decoded_lst.append(decoded_seq)
+
+            #raw_token = [x[0] for x in groupby(np.argmax(logit, axis=1))]
+            #decoded_token = list(filter(lambda a: a != 0, raw_token))
+            #decoded_tokens.append(decoded_token)
+
+        return decoded_lst

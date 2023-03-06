@@ -60,7 +60,7 @@ class Recognizer:
 
         self.default_lang_id = lang_id
 
-    def recognize(self, filename, lang_id=None):
+    def recognize(self, filename, lang_id=None, timestamp=False):
 
         if lang_id is None:
             lang_id = self.default_lang_id
@@ -81,10 +81,10 @@ class Recognizer:
         sample_dict = {'feats': (feats, feat_len), 'meta': meta_dict}
 
         # run inference
-        decoded_tokens = self.am.test_step(sample_dict)
+        decoded_info = self.am.test_step(sample_dict)[0]
 
-        token = self.lm.decode(decoded_tokens[0], lang_id)
-        return ' '.join(token)
+        output = self.lm.decode(decoded_info, lang_id)
+        return output
 
     def recognize_batch(self, audio_path, output_dir, lang_id=None, batch_size=16):
 
@@ -141,11 +141,11 @@ class Recognizer:
             sample['meta']['lang_id'] = lang_id
             sample['meta']['format'] = 'both'
 
-            outputs, decoded_tokens = self.am.test_step(sample)
+            outputs, decoded_info_lst = self.am.test_step(sample)
 
-            for utt_id, decoded_token in zip(sample['utt_ids'], decoded_tokens):
-                token = self.lm.decode(decoded_token, lang_id)
-                tokens.append((utt_id, token))
+            for utt_id, decoded_info in zip(sample['utt_ids'], decoded_info_lst):
+                info = self.lm.decode(decoded_info, lang_id)
+                tokens.append((utt_id, info))
 
             for utt_id, logit in zip(sample['utt_ids'], outputs):
                 logits.append((utt_id, logit.cpu().detach().numpy()))
@@ -174,10 +174,7 @@ class Recognizer:
         # prepare sample
         meta_dict = {'corpus_id': 'test', 'lang_id': lang_id, 'format': 'both'}
         sample_dict = {'feats': (feats, feat_len), 'meta': meta_dict}
-        output, decoded_tokens = self.am.test_step(sample_dict)
-        token = self.lm.decode(decoded_tokens[0], lang_id)
+        output, decoded_info_lst = self.am.test_step(sample_dict)
+        decoded_info = self.lm.decode(decoded_info_lst[0], lang_id)
 
-        return output, token
-
-if __name__ == '__main__':
-    rec = read_recognizer('eng')
+        return output, decoded_info

@@ -2,6 +2,8 @@ model: ssl_transformer
 criterion: ctc
 feat_size: 1024
 hidden_size: 1024
+window_size: 0.02
+window_shift: 0.02
 pos_only: true
 lang_size: 39
 ssl: xlsr
