@@ -1,7 +1,6 @@
 import struct
 import numpy as np
 from pathlib import Path
-import IPython.display as ipd
 import torchaudio
 import torchaudio.functional as F
 import torch
@@ -9,15 +8,22 @@ from scipy.signal import gaussian
 from scipy.signal import spectrogram as scipy_spectrogram
 from matplotlib.colors import LogNorm
 from matplotlib.cm import get_cmap
+import wave
+import contextlib
+import os
 
 
 def read_audio(filename_or_audio, sample_rate=16000):
 
+    utt_id = "audio"
+
     if isinstance(filename_or_audio, Audio):
         orig_sample_rate = filename_or_audio.sample_rate
         samples = filename_or_audio.samples
+        utt_id = filename_or_audio.utt_id
     elif isinstance(filename_or_audio, str) or isinstance(filename_or_audio, Path):
         samples, orig_sample_rate = torchaudio.load(filename_or_audio)
+        utt_id = Path(filename_or_audio).stem
 
         # keep the first channel
         samples = samples[0]
@@ -32,8 +38,22 @@ def read_audio(filename_or_audio, sample_rate=16000):
     elif sample_rate != orig_sample_rate:
         samples = F.resample(samples, orig_sample_rate, sample_rate)
 
-    return Audio(samples, sample_rate)
+    return Audio(samples, sample_rate, utt_id=utt_id)
 
+
+def read_audio_duration(filename):
+
+    if str(filename).endswith('.wav'):
+        with contextlib.closing(wave.open(filename, 'r')) as f:
+            frames = f.getnframes()
+            rate = f.getframerate()
+            duration = frames / float(rate)
+
+    else:
+        meta = torchaudio.info(filename)
+        duration = meta.num_frames / meta.sample_rate
+
+    return duration
 
 def serialize_audio(audio):
     """serialize wav into bytes
@@ -50,6 +70,15 @@ def deserialize_audio(audio_bytes):
     samples = np.frombuffer(audio_bytes, dtype='int16')
 
     return samples
+
+
+def is_audio_file(audio_path):
+
+    if not os.path.isfile(audio_path):
+        return False
+
+    suffix = str(audio_path).split('.')[-1]
+    return suffix in ["wav", "mp3", "flac", "sph", "ogg"]
 
 
 def find_audio(audio_path, suffix=None):
@@ -90,6 +119,7 @@ def write_audio(audio, filename):
     samples = audio.samples.unsqueeze(0)
 
     torchaudio.save(str(filename), samples, sample_rate=audio.sample_rate, bits_per_sample=16, encoding='PCM_S')
+
 
 
 def random_audio(sample_size, sample_rate):
@@ -168,7 +198,12 @@ def split_audio(audio, duration, step=-1, second=True):
 
         new_audio_samples = audio.samples[sample_start:sample_start+duration].clone()
         new_audio.set_samples(new_audio_samples)
-        new_audio.utt_id = f"{idx:04d}"
+
+        if audio.utt_id is not None and len(audio.utt_id) > 0:
+            new_audio.utt_id = f"{audio.utt_id}#{idx:04d}"
+        else:
+            new_audio.utt_id = f"{idx:04d}"
+
         idx += 1
         audio_lst.append(new_audio)
 
@@ -252,7 +287,7 @@ def concatenate_audio(audio_lst, sample_rate=None):
 
 class Audio:
 
-    def __init__(self, samples=None, sample_rate=8000):
+    def __init__(self, samples=None, sample_rate=8000, utt_id="audio"):
         """
         Audio is the basic data structure used in this package.
         It is used to capture fundamental info about audio files such as frequency and samples.
@@ -279,7 +314,7 @@ class Audio:
         # offset field indicating the offset sec from the audio start, mainly for the partial audio
         self.offset = 0.0
 
-        self.utt_id = "none"
+        self.utt_id = utt_id
 
     def __str__(self):
         wave_info = "<Audio sample rate: "+str(self.sample_rate)+", samples: "\
@@ -335,6 +370,8 @@ class Audio:
         return len(self.samples)/self.sample_rate
 
     def play(self, start=None, end=None, frame=False):
+
+        import IPython.display as ipd
 
         if start is None:
             start = 0

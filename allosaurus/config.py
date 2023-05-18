@@ -1,12 +1,17 @@
+import platform
 from pathlib import Path
 import time
+import re
 import torch.distributed
 import platform
 import yaml
 
-class AllosaurusConfigure:
+
+class AllospeechConfigure:
 
     root_path = Path(__file__).parent
+
+    repo_name = 'allosaurus'
 
     # data path
     data_path = root_path / 'data'
@@ -23,11 +28,6 @@ class AllosaurusConfigure:
         setting_dicts = yaml.load(open(self.config_path / 'path.yml', 'rb'), Loader=yaml.FullLoader)
 
         nodename = platform.node()
-
-        self.database_path = Path('/tmp')
-        self.corpora_path = Path('/tmp')
-        self.tmp_path = Path('/tmp')
-
         for hostname, setting_dict in setting_dicts.items():
             if nodename.endswith(hostname):
                 self.database_path = Path(setting_dict['database_path'])
@@ -53,4 +53,4 @@ class AllosaurusConfigure:
         return time.strftime("%y%m%d_%H%M")
 
 
-allosaurus_config = AllosaurusConfigure()
+allosaurus_config = AllospeechConfigure()

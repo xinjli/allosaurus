@@ -13,8 +13,6 @@ def read_ssl_frontend(config, from_pretrained=False):
     task_cfg = ssl_config.xlsr_task_cfg
     model = Wav2Vec2Model(model_cfg)
 
-    feature_selection = 'hidden_states'
-
     if from_pretrained:
         # from: https://huggingface.co/s3prl/converted_ckpts/resolve/main/xlsr_53_56k.pt
         ckpt_state = torch.load(allosaurus_config.model_path / 'xlsr_53_56k.pt', map_location="cpu")
@@ -55,6 +53,7 @@ class SSLFrontend(nn.Module):
         self.task_cfg = task_cfg
         self.wav_normalize = task_cfg.normalize
 
+        self.ssl_feature = self.config.ssl_feature
         self.hooks = []
         self._hook_hiddens = []
 
@@ -160,7 +159,13 @@ class SSLFrontend(nn.Module):
             for layer_id, hidden_state in enumerate(result["hidden_states"]):
                 result[f"hidden_state_{layer_id}"] = hidden_state
 
-        hidden_states = torch.mean(torch.stack(result["hidden_states"], axis=0), axis=0)
+        if self.ssl_feature == 'hidden_states':
+            hidden_states = torch.mean(torch.stack(result["hidden_states"], axis=0), axis=0)
+        elif self.ssl_feature == 'exclude_last_states':
+            hidden_states = torch.mean(torch.stack(result["hidden_states"][:-4], axis=0), axis=0)
+        else:
+            assert self.ssl_feature == 'last_hidden_state'
+            hidden_states = result['last_hidden_state']
 
         if mask is None:
              length = hidden_states.shape[1]

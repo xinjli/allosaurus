@@ -17,6 +17,14 @@ def read_dataset(corpus_path, pm_config_or_name, lm_config_or_name=None, utt_cnt
 
     return Dataset(corpus, pm, lm)
 
+def read_audio_dataset(corpus_path, pm_config_or_name, segment_duration=15.0):
+
+    pm = read_pm(pm_config_or_name)
+    corpus = read_audio_corpus(corpus_path, segment_duration=segment_duration)
+    lm = None
+
+    return Dataset(corpus, pm, lm)
+
 
 class Dataset:
 

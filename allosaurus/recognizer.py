@@ -1,4 +1,4 @@
-from phonepiece.iso import normalize_lang_id
+from phonepiece.lang import normalize_lang_id
 from allosaurus.utils.checkpoint_utils import *
 from allosaurus.am.model import read_am
 from allosaurus.lm.model import read_lm

@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from phonepiece.ipa import read_ipa
 from torch.nn.utils.rnn import pad_sequence
+from scipy.special import softmax
 from allosaurus.utils.tensor import make_pad_mask
 
 def feature_tensor_to_embedding(padded_feature, padded_mask, feature_embed):
@@ -129,3 +130,8 @@ def create_allophone_mapping(inventory):
             mapping[i+1][phm_id] = 1.0
 
     return torch.from_numpy(np.expand_dims(mapping.T, axis=(0,1)))
+
+def create_allophone_distribution(inventory):
+    allophone_mat = create_allophone_mapping(inventory)
+    allophone_dist = torch.from_numpy(softmax(allophone_mat, axis=-1))
+    return allophone_dist

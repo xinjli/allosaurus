@@ -1,0 +1,35 @@
+model: ssl_finetune_transformer
+criterion: ctc
+feat_size: 1024
+hidden_size: 1024
+window_size: 0.02
+window_shift: 0.02
+pos_only: false
+lang_size: 39
+ssl: xlsr
+ssl_feature: hidden_states
+proj_size: 0
+layer_size: 2
+lr_rate: 0.1
+l2: 0
+langs: ['eng', 'cmn', 'deu', 'fra', 'ita', 'rus', 'tur', 'vie']
+input_size: 40
+in_channel: 1
+mid_channel: 64
+out_channel: 128
+kernel_size: [[3,3],[3,3]]
+stride: [2, 2]
+dropout: 0.0
+act_func_type: relu
+front_end_layer_norm: False
+head_size: 4
+d_ff: 2048
+block_size: 2
+pos_dropout: 0.0
+slf_attn_dropout: 0.0
+ffn_dropout: 0.0
+residual_dropout: 0.1
+normalize_before: false,
+concat_after: false
+relative_positional: false
+activation: glu

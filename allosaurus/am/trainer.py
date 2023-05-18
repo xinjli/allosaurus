@@ -1,11 +1,12 @@
 from allosaurus.utils.reporter import *
 from allosaurus.utils.config import write_config
 from allosaurus.utils.checkpoint_utils import *
+from allosaurus.am.optimizer import *
 from pathlib import Path
 import torch.distributed as dist
 from allosaurus.utils.meters import *
-from torch.optim import Adadelta, Adam, SGD
 from allosaurus.config import allosaurus_config
+from phonepiece.inventory import read_inventory
 import time
 
 
@@ -51,19 +52,7 @@ class Trainer:
             self.model = model
 
         # optimizer
-        if "optimizer" in self.config:
-            if self.config.optimizer == 'adadelta':
-                reporter.success("using adadelta lr: "+str(self.config.lr_rate))
-                self.optimizer = Adadelta(self.model.model.parameters(), lr=self.config.lr_rate, eps=1e-8,weight_decay=0.0)
-            elif self.config.optimizer == 'adam':
-                reporter.success("using adam lr: "+str(self.config.lr_rate))
-                self.optimizer = Adam(self.model.model.parameters(), lr=self.config.lr_rate)
-            elif self.config.optimizer == 'sgd':
-                reporter.success("using sgd lr:"+str(self.config.lr_rate))
-                self.optimizer = SGD(self.model.model.parameters(), lr=self.config.lr_rate)
-        else:
-            reporter.success("using default sgd lr:"+str(self.config.lr_rate))
-            self.optimizer = SGD(self.model.model.parameters(), lr=self.config.lr_rate)
+        self.optimizer = read_optimizer(self.model, config)
 
         # store the steps
         self.validate_iter = 0
@@ -79,6 +68,10 @@ class Trainer:
                 reporter.info("loading xlsr_53_56k.pt")
                 ckpt_state = torch.load(allosaurus_config.model_path / 'xlsr_53_56k.pt', map_location="cpu")
                 self.model.model.frontend.model.load_state_dict(ckpt_state["model_weight"])
+
+        # lang to inventory
+        self.lang2inv = {}
+
 
     def train(self, train_loader, cv_loader):
 
@@ -136,19 +129,45 @@ class Trainer:
                     total_token_size = report['total_token_size']
                     average_loss = report['average_loss']
                     average_ter = report['average_ter']
-                    reports = []
+                    aux_loss = report['aux_loss']
 
                     cost_time = time.strftime("%H:%M", time.gmtime(elapsed_time))
-                    message = 'time {} epoch {} ({:08d}|{:08d}) speed: {:.2f} loss {:.6f} ter: {:.6f}'.format(cost_time, ii, i,
-                                iteration, total_token_size/elapsed_time_from_last_epoch, average_loss, average_ter)
 
+                    if aux_loss > 0:
+                        message = 'time {} epoch {} ({:08d}|{:08d}) speed: {:.2f} loss {:.4f} aux {:.4f} ter: {:.4f}'.format(cost_time, ii, i,
+                                iteration, total_token_size/elapsed_time_from_last_epoch, average_loss, aux_loss, average_ter)
+
+                    else:
+                        message = 'time {} epoch {} ({:08d}|{:08d}) speed: {:.2f} loss {:.6f} ter: {:.6f}'.format(cost_time, ii, i,
+                                iteration, total_token_size/elapsed_time_from_last_epoch, average_loss, average_ter)
                     reporter.info(message)
+
+                    lang_id = sample['meta']['lang_id']
+                    if lang_id not in self.lang2inv:
+                        self.lang2inv[lang_id] = read_inventory(lang_id)
+
+                    ref_tokens = reports[-1]["ref_tokens"][0]
+                    ref_phonemes = self.lang2inv[lang_id].phoneme.get_units(ref_tokens)
+                    hyp_tokens = reports[-1]["hyp_tokens"][0]
+                    hyp_phonemes = self.lang2inv[lang_id].phoneme.get_units(hyp_tokens)
+
+                    reporter.info(f'REF: {ref_tokens}, HYP: {hyp_tokens}')
+                    reporter.info(f'REF: {ref_phonemes}, HYP: {hyp_phonemes}')
+                    reports = []
+
                     #print('train time: ', train_time / iteration, ' prep time: ', iter_time / iteration)
                     #print(list(self.arch.arch.named_parameters()))
                     #print(self.arch.arch.embed.weight)
 
                     reporter.add_scalar('Train/Loss', average_loss, self.train_iter)
                     reporter.add_scalar('Train/TER', average_ter, self.train_iter)
+
+                    if aux_loss > 0:
+                        reporter.add_scalar('Train/AuxLoss', aux_loss, self.train_iter)
+
+                    # store phoneme results occasionally
+                    if i % (self.config.report_per_batch * 10) == 0:
+                        reporter.add_text(f'Train/{lang_id}', f'REF: {ref_phonemes}, HYP: {hyp_phonemes}', self.train_iter)
 
                     self.train_iter += 1
 

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-class AllosaurusCriterion(nn.Module):
+class AllospeechCriterion(nn.Module):
     def __init__(self, config):
-        super(AllosaurusCriterion, self).__init__()
+        super(AllospeechCriterion, self).__init__()
         self.config = config

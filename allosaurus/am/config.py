@@ -1,12 +1,16 @@
 import sys
 from allosaurus.utils.config import *
+from allosaurus.config import allosaurus_config
 import yaml
 import time
 
-
 def read_exp_config(exp_name):
     args = dotdict({'rank': 0, 'model_path': 'auto', 'force_deploy': False})
-    exp_path = allosaurus_config.data_path / 'config/exp' / (str(exp_name) + '.yml')
+    exp_path = allosaurus_config.data_path / 'exp' / (str(exp_name) + '.yml')
+
+    if not exp_path.exists():
+        exp_path = allosaurus_config.data_path / 'exp' / 'research' / (str(exp_name) + '.yml')
+
     config_dict = yaml.load(open(str(exp_path)), Loader=yaml.FullLoader)
     args.update(config_dict)
     return args
@@ -36,9 +40,9 @@ def parse_args():
                 val = val.split(',')
 
             if key == 'exp':
-                exp_path = allosaurus_config.data_path / 'config/exp' / (str(val)+'.yml')
-                config_dict = yaml.load(open(str(exp_path)), Loader=yaml.FullLoader)
+                config_dict = read_exp_config(val)
                 args.update(config_dict)
+                args['exp'] = val
 
             if key == 'ngpu':
                 val = int(val)
@@ -63,22 +67,12 @@ def get_model_path(args):
         return None
     elif args.model_path == 'auto':
 
-        if len(args.corpus_ids) > 1:
-            lang_id = 'mul'
-        else:
-            lang_id = args.corpus_ids[0].split('_')[0]
+        model_name = args.exp
 
-        model_name = args.am.split('/')[-1]
-        timestamp = time.strftime("%m%d_%H%M")
+        if model_name.startswith('research/'):
+            model_name = model_name[9:]
 
-        corpus_id = args.corpus_ids[0]
-
-        if 'tag' in args:
-            tag_name = '_'+args.tag
-        else:
-            tag_name = ''
-
-        return allosaurus_config.model_path / lang_id / corpus_id / (timestamp + '_' + model_name + tag_name)
+        return allosaurus_config.model_path / model_name
     else:
         return Path(args.model_path)
 

@@ -4,6 +4,16 @@ from allosaurus.record import read_record
 from allosaurus.text import read_text
 
 
+def read_corpus_path(corpus_path_or_id):
+    if not Path(corpus_path_or_id).exists():
+        lang_id = corpus_path_or_id.split('_')[0]
+        corpus_path = allosaurus_config.tmp_path / 'corpus' / lang_id / corpus_path_or_id
+        return corpus_path
+    else:
+        return corpus_path_or_id
+
+
+
 def read_corpus(corpus_path, utt_cnt=None):
 
     # corpus might be an corpus_id
@@ -50,8 +60,8 @@ def read_corpus(corpus_path, utt_cnt=None):
     return Corpus(utt_ids, record, text, corpus_id, lang_id)
 
 
-def read_audio_corpus(corpus_path, corpus_id='eng_unk', lang_id='eng'):
-    record = read_record(corpus_path)
+def read_audio_corpus(corpus_path, corpus_id='eng_unk', lang_id='eng', segment_duration=15.0):
+    record = read_record(corpus_path, segment_duration=segment_duration)
     utt_ids = record.utt_ids
     text = None
 

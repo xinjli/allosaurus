@@ -16,20 +16,45 @@ import torch
 from torch.serialization import default_restore_location
 from pathlib import Path
 from allosaurus.config import allosaurus_config
+from allosaurus.bin.download_model import download_model
 
+#from fairseq.models import FairseqEncoder, FairseqDecoder
 
-def find_topk_models(exp_name, topk=1):
+def resolve_model_name(model_name='latest', checkpoint=None):
 
-    exp_dir = allosaurus_config.data_path / 'model' / exp_name
-    model_lst = []
-    for model_path in exp_dir.glob('*.pt'):
-        perf = model_path.stem.split('_')[1]
-        model_lst.append((float(perf), model_path))
+    public_models = {
+        'latest': '23020401',
+        '23020401': '23020401',
+        '23042401_finetune_transformer_block': '23042401_finetune_transformer_block'
+    }
 
-    model_lst.sort()
-    topk_models = [model[1] for model in model_lst[:topk]]
-    return topk_models
+    # public version
+    if allosaurus_config.repo_name == 'allosaurus':
 
+        model_name = public_models[model_name]
+
+        assert model_name in public_models, f"{model_name} is not available"
+
+        download_model(model_name)
+
+        checkpoint = find_topk_models(model_name, topk=1)[0]
+
+        return model_name, checkpoint
+
+    # private version
+    if checkpoint is not None:
+        assert Path(checkpoint).exists(), f"{checkpoint} does not exist!!"
+        model_name = Path(checkpoint).parent.name
+        return model_name, checkpoint
+    else:
+        assert model_name is not None
+
+        if model_name in public_models:
+            model_name = public_models[model_name]
+
+        checkpoint = find_topk_models(model_name, topk=1)[0]
+
+        return model_name, checkpoint
 
 
 def torch_save(model, path):
@@ -73,6 +98,23 @@ def torch_load(model, path):
         model.load_state_dict(new_state_dict)
 
     del model_state_dict, new_state_dict
+
+
+def find_topk_models(exp_name, topk=1):
+
+    exp_dir = allosaurus_config.data_path / 'model' / exp_name
+
+    if (exp_dir / 'model.pt').exists() and topk==1:
+        return [exp_dir / 'model.pt']
+
+    model_lst = []
+    for model_path in exp_dir.glob('*.pt'):
+        perf = model_path.stem.split('_')[1]
+        model_lst.append((float(perf), model_path))
+
+    model_lst.sort()
+    topk_models = [model[1] for model in model_lst[:topk]]
+    return topk_models
 
 
 def save_checkpoint(args, trainer, epoch_itr, val_loss):

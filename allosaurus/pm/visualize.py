@@ -4,7 +4,7 @@ from scipy.signal import gaussian
 from scipy.signal import spectrogram as scipy_spectrogram
 from matplotlib.colors import LogNorm
 from matplotlib.cm import get_cmap
-from allosaurus.audio import *
+from allosaurus.data.audio import *
 
 plt.rc('figure', figsize=(16, 4))
 

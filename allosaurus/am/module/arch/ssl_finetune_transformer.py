@@ -10,11 +10,12 @@ from allosaurus.am.module.frontend.ssl import read_ssl_frontend
 from allosaurus.am.module.block.pos import PositionalEncoding
 from allosaurus.am.module.utils.register import register_arch
 
+#warnings.filterwarnings("ignore", message="Setting attributes on ParameterDict is not supported.")
 
 @register_arch
-class SSLTransformer(nn.Module):
+class SSLFinetuneTransformer(nn.Module):
 
-    type_ = 'ssl_transformer'
+    type_ = 'ssl_finetune_transformer'
 
     def __init__(self, config):
         super().__init__()
@@ -43,6 +44,9 @@ class SSLTransformer(nn.Module):
         self.phone2phoneme_params = dict()
 
         # self.output_layer = nn.Linear(self.hidden_size*2, 40)
+        self.blocks = nn.ModuleList([
+           TransformerEncoderLayer(config) for _ in range(config.block_size)
+        ])
 
         for lang_id in config.langs:
             self.prep_language_layer(lang_id, 'cpu')
@@ -51,18 +55,12 @@ class SSLTransformer(nn.Module):
         if self.config.rank is None:
             self.config.rank = 0
 
-        self.pos_emb = PositionalEncoding(config.hidden_size, config.pos_dropout)
-
-        self.blocks = nn.ModuleList([
-            TransformerEncoderLayer(config) for _ in range(config.block_size)
-        ])
-
         self.logsoftmax = nn.LogSoftmax(dim=2)
 
     def prep_language_layer(self, lang_id, device=None):
 
         if str(lang_id) not in self.feature2phone:
-            #print("preparing ", lang_id, ' pos_only ', self.config.pos_only)
+            #print("preparing ", lang_id)
 
             inventory = read_inventory(lang_id)
             lang_id = str(lang_id)
@@ -92,20 +90,14 @@ class SSLTransformer(nn.Module):
 
         lang_id = str(meta['lang_id'])
 
-        with torch.no_grad():
-            feats, mask = self.frontend.forward(input_tensor, input_lengths)
+        feats, mask = self.frontend.forward(input_tensor, input_lengths)
 
         enc_output = feats
         #print("feats: ", enc_output)
         #print("feats shape: ", enc_output.shape)
 
-        enc_output, pos = self.pos_emb(enc_output)
-
         for i, block in enumerate(self.blocks):
-            enc_output, _ = block(enc_output, mask.unsqueeze(1), pos)
-
-        #print("encoder_output: ", enc_output)
-        #print("encoder_output shape: ", enc_output.shape)
+            enc_output, _ = block(enc_output, mask.unsqueeze(1))
 
         output_length = torch.sum(mask, dim=1)
 
@@ -149,7 +141,6 @@ class SSLTransformer(nn.Module):
         #print("in - target tensor", target_tensor.shape)
         #print("in - target length", target_lengths.shape)
 
-        # return (B,T,H) for gathering
         result = {
             'output': output_tensor,
             'output_length': output_length,

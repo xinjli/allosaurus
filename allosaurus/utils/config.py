@@ -24,7 +24,7 @@ def read_config(config_name_or_path, overwrite_config=None):
         config_yml = config_name_or_path + '.yml'
         config_path = allosaurus_config.data_path / 'config' / config_yml
 
-        assert config_path.exists()
+        assert config_path.exists(), f"{config_path} does not exist"
         config_dict = yaml.load(open(str(config_path)), Loader=yaml.FullLoader)
 
     if overwrite_config is not None:

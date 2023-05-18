@@ -109,6 +109,10 @@ class Reporter:
         if self.rank == 0 and self.writer:
             self.writer.add_scalar(tag, scalar_value, global_step)
 
+    def add_text(self, tag, text_string, global_step):
+        if self.rank == 0 and self.writer:
+            self.writer.add_text(tag, text_string, global_step)
+
     def info(self, message, broadcast=False):
         if self.rank == 0 or broadcast:
             message = f'rank {self.rank}: {message}'

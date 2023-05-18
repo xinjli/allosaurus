@@ -1,5 +1,5 @@
 import numpy as np
-from allosaurus.dataset import read_dataset
+from allosaurus.dataset import read_dataset, read_audio_dataset
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from allosaurus.utils.tensor import pad_list
@@ -82,7 +82,7 @@ def collate_feats_langs(raw_utt_dict_lst):
             continue
 
         if pm_config.model == 'raw' and feat_length > 160000:
-            #print("deleting samples > 160000 ", feat_length)
+            print("deleting samples > 160000 ", feat_length)
             continue
 
         assert utt_dict['corpus_id'] == raw_utt_dict_lst[0]['corpus_id'], "corpus id inconsistent!"
@@ -118,13 +118,13 @@ def collate_feats(utt_dict_lst):
     return batch_dict
 
 
-def read_loader(corpus_path, pm_config_or_name, lm_config_or_name, batch_size=16):
+def read_loader(corpus_path, pm_config_or_name, lm_config_or_name, batch_size=12):
 
     dataset = read_dataset(corpus_path, pm_config_or_name, lm_config_or_name)
     return DataLoader(dataset, batch_size=batch_size, collate_fn=collate_feats_langs, num_workers=8)
 
 
-def read_audio_loader(corpus_path, pm_config_or_name, batch_size=16):
+def read_audio_loader(corpus_path, pm_config_or_name, batch_size=16, segment_duration=15):
 
-    dataset = read_dataset(corpus_path, pm_config_or_name, lm_config_or_name=None)
+    dataset = read_audio_dataset(corpus_path, pm_config_or_name, segment_duration=segment_duration)
     return DataLoader(dataset, batch_size=batch_size, collate_fn=collate_feats)

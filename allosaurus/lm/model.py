@@ -59,22 +59,5 @@ class LanguageModel:
 
         return id_lst
 
-    def decode(self, id_lst_or_info_lst, lang_id=None):
-
-        assert isinstance(id_lst_or_info_lst, list)
-
-        if len(id_lst_or_info_lst) == 0:
-            return []
-
-        # info lst
-        if isinstance(id_lst_or_info_lst[0], dict):
-            for info in id_lst_or_info_lst:
-                phone_id = info['phone_id']
-                phone = self.tokenizer.decode([phone_id], lang_id)
-                info['phone'] = phone
-                info['alternatives'] = self.tokenizer.decode(info['alternative_ids'], lang_id)
-
-            return id_lst_or_info_lst
-        else:
-            id_lst = id_lst_or_info_lst
-            return self.tokenizer.decode(id_lst, lang_id)
+    def decode(self, id_lst, lang_id=None):
+        return self.tokenizer.decode(id_lst, lang_id)

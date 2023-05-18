@@ -12,6 +12,7 @@ def read_am(config_or_name, overwrite_config=None):
 
     if isinstance(config_or_name, str):
         config = read_config('am/'+config_or_name, overwrite_config)
+
     else:
         config = config_or_name
 
@@ -20,6 +21,7 @@ def read_am(config_or_name, overwrite_config=None):
     for arch_cls in arch_types:
         if arch_cls.type_ == config.model:
             model = arch_cls(config)
+
     if model is None:
         reporter.critical(f"am arch {config.model} not available from {list(arch_cls.type_ for arch_cls in arch_types)}")
         exit(1)
@@ -71,24 +73,34 @@ class AcousticModel:
 
         meta = sample['meta']
 
-        output, output_length = self.model(feat, feat_length, meta)
+        result = self.model(feat, feat_length, meta)
+
+        output = result['output']
+        output_length = result['output_length']
 
         # print("output ", output, "shape ", output.shape)
         # print("output_length ", output_length)
         # print("lang ", lang)
         # print("lang_length ", lang_length)
+        ter, total_token_size,target_tokens, decoded_tokens = self.eval_ter(output, output_length, sample)
 
         loss = self.criterion(output, output_length, lang, lang_length)
 
-        ter, total_token_size = self.eval_ter(output, output_length, sample)
 
         total_loss = float(loss)
 
         # print(feat, feat_length)
         # print(total_loss, total_token_size)
 
-        loss /= total_token_size
-        loss.backward()
+        ave_loss = loss / total_token_size
+
+        aux_loss = 0
+
+        if 'loss' in result:
+            ave_loss += result['loss']
+            aux_loss = float(result['loss'])
+
+        ave_loss.backward()
 
         #print(output_length / lang_length)
         #print(output.shape[1] / lang.shape[1])
@@ -115,12 +127,15 @@ class AcousticModel:
             'total_ter': ter,
             'total_token_size': total_token_size,
             'total_loss': total_loss,
+            'aux_loss': aux_loss,
             'average_ter': ter / total_token_size,
             'average_loss': total_loss / total_token_size,
             'output': output,
             'output_length': output_length,
             'lang': lang,
-            'lang_length': lang_length
+            'lang_length': lang_length,
+            'ref_tokens': target_tokens,
+            'hyp_tokens': decoded_tokens
         }
 
         return step_report
@@ -135,11 +150,14 @@ class AcousticModel:
 
         meta = sample['meta']
 
-        output, output_length = self.model(feat, feat_length, meta)
+        result = self.model(feat, feat_length, meta)
+
+        output = result['output']
+        output_length = result['output_length']
 
         loss = self.criterion(output, output_length, lang, lang_length)
 
-        ter, total_token_size = self.eval_ter(output, output_length, sample)
+        ter, total_token_size, target_tokens, decoded_tokens = self.eval_ter(output, output_length, sample)
 
         total_loss = float(loss)
 
@@ -153,6 +171,7 @@ class AcousticModel:
             'total_ter': ter,
             'total_token_size': total_token_size,
             'total_loss': total_loss,
+            'aux_loss': 0,
             'average_ter': ter / total_token_size,
             'average_loss': total_loss / total_token_size
         }
@@ -174,10 +193,12 @@ class AcousticModel:
         else:
             format = 'token'
 
-        output, output_length = self.model(feat, feat_length, meta)
+        result = self.model(feat, feat_length, meta)
+
+        output = result['output'].detach()
+        output_length = result['output_length']
 
         emit = 1.0
-
         if 'emit' in sample:
             emit = sample['emit']
 
@@ -197,7 +218,6 @@ class AcousticModel:
 
         else:
             decoded_info = self.decode(output, output_length, topk, emit)
-            # corpus_id = sample['meta']['corpus_id']
 
             return decoded_info
 
@@ -217,6 +237,7 @@ class AcousticModel:
             corpus_dict['total_token_size'] = sum([report['total_token_size'] for report in corpus_reports])
             corpus_dict['total_ter'] = sum([report['total_ter'] for report in corpus_reports])
             corpus_dict['total_loss'] = sum([report['total_loss'] for report in corpus_reports])
+            corpus_dict['aux_loss'] = sum([report['aux_loss'] for report in corpus_reports])
             corpus_dict['average_ter'] = corpus_dict['total_ter']*1.0 / corpus_dict['total_token_size']
             corpus_dict['average_loss'] = corpus_dict['total_loss']*1.0 / corpus_dict['total_token_size']
 
@@ -227,6 +248,7 @@ class AcousticModel:
         total_report['total_token_size'] = sum([report['total_token_size'] for report in reports])
         total_report['total_ter'] = sum([report['total_ter'] for report in reports])
         total_report['total_loss'] = sum([report['total_loss'] for report in reports])
+        total_report['aux_loss'] = sum([report['aux_loss'] for report in reports])
         total_report['average_ter'] = total_report['total_ter']*1.0 / total_report['total_token_size']
         total_report['average_loss'] = total_report['total_loss']*1.0 / total_report['total_token_size']
 
@@ -251,6 +273,8 @@ class AcousticModel:
         logits_length = move_to_ndarray(output_length)
 
         targets, targets_length = sample["langs"]
+        target_tokens = []
+        decoded_tokens = []
 
         for i in range(len(targets_length)):
             target = targets[i, :targets_length[i]].tolist()
@@ -259,12 +283,37 @@ class AcousticModel:
             raw_token = [x[0] for x in groupby(np.argmax(logit, axis=1))]
             decoded_token = list(filter(lambda a: a != 0, raw_token))
 
+            target_tokens.append(target)
+            decoded_tokens.append(decoded_token)
+            #print('target ', target)
+            #print('decoded_token ', decoded_token)
+
             error = editdistance.distance(target, decoded_token)
 
             error_cnt += error
             total_cnt += targets_length[i]
 
-        return error_cnt, total_cnt
+        return error_cnt, total_cnt, target_tokens, decoded_tokens
+
+    # def decode(self, output, output_length, meta):
+    #
+    #     logits = move_to_ndarray(output)
+    #     logits_length = move_to_ndarray(output_length)
+    #
+    #     assert len(logits) == len(logits_length)
+    #
+    #     decoded_tokens = []
+    #
+    #     for i in range(len(logits)):
+    #
+    #         logit  = logits[i][:logits_length[i]]
+    #
+    #         raw_token = [x[0] for x in groupby(np.argmax(logit, axis=1))]
+    #         decoded_token = list(filter(lambda a: a != 0, raw_token))
+    #         decoded_tokens.append(decoded_token)
+    #
+    #     return decoded_tokens
+
 
     def decode(self, output, output_length, topk=1, emit=1.0):
 

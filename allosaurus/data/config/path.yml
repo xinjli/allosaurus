@@ -1,3 +1,7 @@
-tmp.edu:
-  database_path: /tmp
-  tmp_path:  /tmp
+xinjianl-main:
+  database_path: /project/ocean/xinjianl
+  tmp_path: /home/xinjianl
+
+bridges2.psc.edu:
+  database_path: /ocean/projects/cis210027p/xinjianl/asr2k/allosaurus/allosaurus/data
+  tmp_path:  /ocean/projects/cis210027p/xinjianl/asr2k/allosaurus/allosaurus/data

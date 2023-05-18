@@ -8,7 +8,7 @@
 from allosaurus.am.module.criterion.criterion import *
 
 
-class CTCCriterion(AllosaurusCriterion):
+class CTCCriterion(AllospeechCriterion):
     def __init__(self, config):
         super().__init__(config)
 

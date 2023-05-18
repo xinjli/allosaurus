@@ -1,18 +1,16 @@
-from setuptools import setup,find_packages
+from setuptools import setup
 
 setup(
    name='allosaurus',
-   version='2.0.0',
-   description='a multilingual phone recognizer',
+   version='2.0.1',
+   description='A python speech recognition framework',
    author='Xinjian Li',
-   author_email='xinjianl@cs.cmu.edu',
-   url="https://github.com/xinjli/allosaurus",
-   packages=find_packages(),
    package_data={'': ['*.yml', '*.csv']},
    install_requires=[
       'scipy',
       'numpy',
       'torch',
       'editdistance',
+      'loguru'
    ]
 )
