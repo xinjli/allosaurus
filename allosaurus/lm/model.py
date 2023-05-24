@@ -7,7 +7,7 @@ import json
 import yaml
 
 
-def read_lm(config_or_name):
+def read_lm(config_or_name, overwrite_config=None):
     """
     read language arch (cleaner, tokenizer)
 
@@ -21,7 +21,7 @@ def read_lm(config_or_name):
 
     if isinstance(config_or_name, str):
         config_path = Path(allosaurus_config.data_path / 'config' / 'lm' / (config_or_name + '.yml'))
-        config = read_config(config_path)
+        config = read_config(config_path, overwrite_config)
     else:
         config = config_or_name
 

@@ -13,12 +13,14 @@ import sys
 import numpy as np
 
 
-def read_recognizer(model_name='latest', checkpoint=None):
+def read_recognizer(model_name='latest', checkpoint=None, am_overwrite=None, pm_overwrite=None, lm_overwrite=None):
 
     model_name, checkpoint = resolve_model_name(model_name, checkpoint)
 
+    # load configs
     config = read_exp_config(model_name)
-    am = read_am(config.am)
+
+    am = read_am(config.am, am_overwrite)
 
     if checkpoint is None:
         checkpoint = find_topk_models(model_name)[0]
@@ -30,9 +32,9 @@ def read_recognizer(model_name='latest', checkpoint=None):
     else:
         am.device_id = -1
 
-    lm = read_lm(config.lm)
+    lm = read_lm(config.lm, lm_overwrite)
 
-    pm = read_pm(config.pm)
+    pm = read_pm(config.pm, pm_overwrite)
 
     return Recognizer(am, pm, lm)
 
@@ -172,6 +174,40 @@ class Recognizer:
         w.close()
         if detail_w is not None:
             detail_w.close()
+
+
+    def score_batch(self, corpus_id_or_path, lang_id, output, batch_size=16, num_workers=8):
+
+        print('prep loader')
+        loader = read_loader(corpus_id_or_path, self.pm, self.lm, lang_id=lang_id, batch_size=batch_size, num_workers=num_workers)
+        print('after prep loader')
+
+        iterator = iter(loader)
+        iteration = len(iterator)
+
+        res = []
+
+        # training steps
+        for _ in tqdm.tqdm(range(iteration)):
+
+            sample = next(iterator)
+            sample['meta']['lang_id'] = lang_id
+
+            loss = self.am.loss_step(sample)
+
+            for utt_id, loss_val in zip(sample['utt_ids'], loss.tolist()):
+                res.append((utt_id, loss_val))
+
+        res.sort(key=lambda x: x[0])
+
+        output_dir = Path(output)
+        output_dir.mkdir(exist_ok=True, parents=True)
+        w = open(output_dir / 'score', 'w')
+
+        for utt_id, loss_val in res:
+            w.write(f"{utt_id} {loss_val}\n")
+
+        w.close()
 
     def merge_partial_logit(self, res):
         res.sort(key=lambda x: x[0])

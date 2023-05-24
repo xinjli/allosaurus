@@ -23,7 +23,7 @@ class PhoneTokenizer:
     def tokenize(self, sent, lang_id='eng'):
 
         if lang_id not in self.lang2tokenizer:
-            tokenizer = read_tokenizer(lang_id, device='cpu')
+            tokenizer = read_tokenizer(lang_id, device='cuda')
             self.lang2tokenizer[lang_id] = tokenizer
 
         tokenizer = self.lang2tokenizer[lang_id]

@@ -4,12 +4,12 @@ from allosaurus.lm.model import read_lm
 import torch
 
 
-def read_dataset(corpus_path, pm_config_or_name, lm_config_or_name=None, utt_cnt=None):
+def read_dataset(corpus_path, pm_config_or_name, lm_config_or_name=None, utt_cnt=None, lang_id=None):
 
     pm = read_pm(pm_config_or_name)
 
     if lm_config_or_name is not None:
-        corpus = read_corpus(corpus_path, utt_cnt=utt_cnt)
+        corpus = read_corpus(corpus_path, utt_cnt=utt_cnt, lang_id=lang_id)
         lm = read_lm(lm_config_or_name)
     else:
         corpus = read_audio_corpus(corpus_path)

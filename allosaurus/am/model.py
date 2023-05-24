@@ -12,7 +12,6 @@ def read_am(config_or_name, overwrite_config=None):
 
     if isinstance(config_or_name, str):
         config = read_config('am/'+config_or_name, overwrite_config)
-
     else:
         config = config_or_name
 
@@ -162,7 +161,7 @@ class AcousticModel:
         total_loss = float(loss)
 
         if self.config.debug_task:
-            debug_model(model)
+            debug_model(self.model)
 
         corpus_id = sample['meta']['corpus_id']
 
@@ -177,6 +176,26 @@ class AcousticModel:
         }
 
         return step_report
+
+    def loss_step(self, sample: dict):
+
+        self.model.eval()
+
+        # get batch and prepare it into pytorch format
+        lang, lang_length = tensor_to_cuda(sample["langs"], self.device_id)
+        feat, feat_length = tensor_to_cuda(sample["feats"], self.device_id)
+
+        meta = sample['meta']
+
+        result = self.model(feat, feat_length, meta)
+
+        output = result['output']
+        output_length = result['output_length']
+
+        loss = self.criterion.non_reduction_forward(output, output_length, lang, lang_length)
+        loss = (loss / lang_length).cpu().detach().numpy()
+
+        return loss
 
 
     def test_step(self, sample: dict):

@@ -74,15 +74,17 @@ def collate_feats_langs(raw_utt_dict_lst):
         lang_length = len(utt_dict['langs'])
         feat_length = len(utt_dict['feats'])
 
+
+        if feat_length > pm_config.max_feature_length:
+            print(f"cutting samples {feat_length} > {pm_config.max_feature_length}")
+            utt_dict['feats'] = utt_dict['feats'][:pm_config.max_feature_length]
+
+            ratio = feat_length / pm_config.max_feature_length
+            expect_lang_length = int(lang_length / ratio)
+            utt_dict['langs'] = utt_dict['langs'][:expect_lang_length]
+            print(f"cutting langs as well {lang_length} -> {expect_lang_length}")
+
         if lang_length > 500 or lang_length * 2 + 1 >= feat_length:
-            continue
-
-        if pm_config.model != 'raw' and feat_length > 2000:
-            print("deleting > 2000 ", pm_config)
-            continue
-
-        if pm_config.model == 'raw' and feat_length > 160000:
-            print("deleting samples > 160000 ", feat_length)
             continue
 
         assert utt_dict['corpus_id'] == raw_utt_dict_lst[0]['corpus_id'], "corpus id inconsistent!"
@@ -118,10 +120,10 @@ def collate_feats(utt_dict_lst):
     return batch_dict
 
 
-def read_loader(corpus_path, pm_config_or_name, lm_config_or_name, batch_size=12):
+def read_loader(corpus_path, pm_config_or_name, lm_config_or_name, lang_id=None, batch_size=12, num_workers=8):
 
-    dataset = read_dataset(corpus_path, pm_config_or_name, lm_config_or_name)
-    return DataLoader(dataset, batch_size=batch_size, collate_fn=collate_feats_langs, num_workers=8)
+    dataset = read_dataset(corpus_path, pm_config_or_name, lm_config_or_name, lang_id=lang_id)
+    return DataLoader(dataset, batch_size=batch_size, collate_fn=collate_feats_langs, num_workers=num_workers)
 
 
 def read_audio_loader(corpus_path, pm_config_or_name, batch_size=16, segment_duration=15):

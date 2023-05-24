@@ -1,2 +1,3 @@
 model: raw
 sample_rate: 16000
+max_feature_length: 160000

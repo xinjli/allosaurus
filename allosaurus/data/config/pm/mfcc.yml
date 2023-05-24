@@ -1,3 +1,4 @@
 model: mfcc
 sample_rate: 16000
 feature_size: 40
+max_feature_length: 2000

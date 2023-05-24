@@ -13,37 +13,42 @@ def read_corpus_path(corpus_path_or_id):
         return corpus_path_or_id
 
 
-
-def read_corpus(corpus_path, utt_cnt=None):
+def read_corpus(corpus_path, utt_cnt=None, lang_id=None):
 
     # corpus might be an corpus_id
     if not Path(corpus_path).exists():
         lang_id = corpus_path.split('_')[0]
         corpus_path = allosaurus_config.tmp_path / 'corpus' / lang_id / corpus_path
-
         assert corpus_path.exists(), corpus_path
 
-    corpus_path = Path(corpus_path)
-    record_path = corpus_path / 'record.txt'
-    text_path = corpus_path / 'text.txt'
+        corpus_id = corpus_path.name
 
-    # get corpus_id, lang_id
-    corpus_id = corpus_path.name
-    if '_' not in corpus_id:
-        corpus_id = 'eng_unk'
-        lang_id = 'eng'
+        if '_' not in corpus_id:
+            corpus_id = 'eng_unk'
+            lang_id = 'eng'
+        else:
+            lang_id = corpus_id.split('_')[0]
+
     else:
-        lang_id = corpus_id.split('_')[0]
+        if lang_id is None:
+            lang_id = 'eng'
+
+        corpus_path = Path(corpus_path)
+        corpus_id = corpus_path.name
 
     # load record if exists
     record = None
-    if record_path.exists():
-        record = read_record(record_path)
+    if (corpus_path / 'record.txt').exists():
+        record = read_record(corpus_path / 'record.txt')
+    elif (corpus_path / 'segments').exists():
+        record = read_record(corpus_path / 'segments')
 
     # load text if exists
     text = None
-    if text_path.exists():
-        text = read_text(text_path, lang_id)
+    if (corpus_path / 'text.txt').exists():
+        text = read_text(corpus_path / 'text.txt', lang_id)
+    elif (corpus_path / 'text').exists():
+        text = read_text(corpus_path / 'text', lang_id)
 
     assert (record is not None) or (text is not None), " both text and record are empty!"
 
