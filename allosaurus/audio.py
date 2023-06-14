@@ -44,7 +44,7 @@ def read_audio(filename_or_audio, sample_rate=16000):
 def read_audio_duration(filename):
 
     if str(filename).endswith('.wav'):
-        with contextlib.closing(wave.open(filename, 'r')) as f:
+        with contextlib.closing(wave.open(str(filename), 'r')) as f:
             frames = f.getnframes()
             rate = f.getframerate()
             duration = frames / float(rate)

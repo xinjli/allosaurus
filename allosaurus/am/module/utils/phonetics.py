@@ -4,6 +4,7 @@ from phonepiece.ipa import read_ipa
 from torch.nn.utils.rnn import pad_sequence
 from scipy.special import softmax
 from allosaurus.utils.tensor import make_pad_mask
+from phonepiece.inventory import read_inventory
 
 def feature_tensor_to_embedding(padded_feature, padded_mask, feature_embed):
 
@@ -65,6 +66,18 @@ def create_feature_list(inventory, pos_only=True):
 
     return feature_lst
 
+
+def create_remap_matrix(origin_lang_id, target_lang_id):
+    origin_inventory = read_inventory(origin_lang_id)
+    target_inventory = read_inventory(target_lang_id)
+
+    ylst = target_inventory.phoneme.atoi(target_inventory.remap(origin_inventory.phoneme.elems[:-1]))
+    xlst = list(range(len(origin_inventory.phoneme)-1))
+
+    remap_matrix = np.zeros((len(origin_inventory.phoneme)-1, len(target_inventory.phoneme)-1), dtype=np.float32)
+    remap_matrix[xlst, ylst] = 1
+
+    return torch.from_numpy(remap_matrix)
 
 def create_phone_embedding(inventory, feature_embed, pos_only=True):
     """

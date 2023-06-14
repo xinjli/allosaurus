@@ -67,14 +67,14 @@ class Recognizer:
             sample['meta']['lang_id'] = lang_id
             sample['meta']['format'] = 'both'
 
-            outputs, decoded_info_lst = self.am.test_step(sample)
+            logit_lst, decoded_info_lst = self.am.test_step(sample)
 
             for utt_id, decoded_info in zip(sample['utt_ids'], decoded_info_lst):
                 decoded_info = self.lm.decode(decoded_info, lang_id)
                 utt_infos.append((utt_id, decoded_info))
 
-            for utt_id, utt_logit in zip(sample['utt_ids'], outputs):
-                utt_logits.append((utt_id, utt_logit.cpu().detach().numpy()))
+            for utt_id, utt_logit in zip(sample['utt_ids'], logit_lst):
+                utt_logits.append((utt_id, utt_logit))
 
         utt_infos = self.merge_partial_info(utt_infos)
         utt_logits = self.merge_partial_logit(utt_logits)

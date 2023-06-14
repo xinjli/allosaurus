@@ -38,16 +38,12 @@ def read_corpus(corpus_path, utt_cnt=None, lang_id=None):
 
     # load record if exists
     record = None
-    if (corpus_path / 'record.txt').exists():
-        record = read_record(corpus_path / 'record.txt')
-    elif (corpus_path / 'segments').exists():
-        record = read_record(corpus_path / 'segments')
+    if (corpus_path / 'wav.scp').exists():
+        record = read_record(corpus_path / 'wav.scp')
 
     # load text if exists
     text = None
-    if (corpus_path / 'text.txt').exists():
-        text = read_text(corpus_path / 'text.txt', lang_id)
-    elif (corpus_path / 'text').exists():
+    if (corpus_path / 'text').exists():
         text = read_text(corpus_path / 'text', lang_id)
 
     assert (record is not None) or (text is not None), " both text and record are empty!"

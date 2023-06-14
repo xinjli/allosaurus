@@ -6,6 +6,7 @@ from itertools import groupby
 import editdistance
 from collections import defaultdict
 import torch.nn as nn
+import torch.cuda
 
 
 def read_am(config_or_name, overwrite_config=None):
@@ -44,7 +45,13 @@ class AcousticModel:
         self.criterion = criterion
 
         self.config = config
-        self.device_id = self.config.rank
+
+        if "rank" in self.config:
+            self.device_id = self.config.rank
+        elif torch.cuda.is_available():
+            self.device_id = 0
+        else:
+            self.device_id = -1
 
     def cuda(self):
         self.model = self.model.cuda()
@@ -217,6 +224,16 @@ class AcousticModel:
         output = result['output'].detach()
         output_length = result['output_length']
 
+        logits = move_to_ndarray(output)
+        logits_length = move_to_ndarray(output_length)
+
+        assert len(logits) == len(logits_length)
+        logit_lst = []
+
+        for ii in range(len(logits)):
+            logit = logits[ii][:logits_length[ii]]
+            logit_lst.append(logit)
+
         emit = 1.0
         if 'emit' in sample:
             emit = sample['emit']
@@ -230,13 +247,13 @@ class AcousticModel:
             topk = sample['topk']
 
         if format == 'logit':
-            return output
+            return logit_lst
         elif format == 'both':
-            decoded_info = self.decode(output, output_length, topk, emit)
+            decoded_info = self.decode(logit_lst, topk, emit)
             return output, decoded_info
 
         else:
-            decoded_info = self.decode(output, output_length, topk, emit)
+            decoded_info = self.decode(logit_lst, topk, emit)
 
             return decoded_info
 
@@ -334,19 +351,13 @@ class AcousticModel:
     #     return decoded_tokens
 
 
-    def decode(self, output, output_length, topk=1, emit=1.0):
-
-        logits = move_to_ndarray(output)
-        logits_length = move_to_ndarray(output_length)
-
-        assert len(logits) == len(logits_length)
+    def decode(self, logit_lst, topk=1, emit=1.0):
 
         decoded_lst = []
 
-        for ii in range(len(logits)):
+        for ii in range(len(logit_lst)):
 
-            logit = logits[ii][:logits_length[ii]]
-
+            logit = logit_lst[ii]
             emit_frame_idx = []
 
             cur_max_arg = -1
@@ -383,7 +394,7 @@ class AcousticModel:
 
                 start_timestamp = self.config.window_shift * idx
                 end_timestamp = self.config.window_shift * next_idx
-                duration = min(1.0, end_timestamp - start_timestamp)
+                duration = min(0.2, end_timestamp - start_timestamp)
 
                 info = {'start': self.config.window_shift * idx,
                         'duration': duration,

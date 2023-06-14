@@ -1,0 +1,13 @@
+corpus_ids: [jpn_cvtrain]
+batch_size: 16
+am: xlsr_finetune_jpn
+lm: phone
+pm: raw
+gpu_size: 1
+lr_rate: 0.0001
+optimizer: adamw
+epoch: 2000
+grad_clip: 2.0
+report_per_batch: 10
+eval_per_epoch: False
+eval_per_second: 3600

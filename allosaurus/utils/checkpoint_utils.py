@@ -25,7 +25,9 @@ def resolve_model_name(model_name='latest', checkpoint=None):
     public_models = {
         'latest': '23020401',
         '23020401': '23020401',
-        '23042401_finetune_transformer_block': '23042401_finetune_transformer_block'
+        '23042401_finetune_transformer_block': '23042401_finetune_transformer_block',
+        '23060201_eng': '23060201_eng',
+        '23060203_jpn': '23060203_jpn'
     }
 
     # public version

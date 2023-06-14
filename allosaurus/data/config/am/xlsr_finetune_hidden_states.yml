@@ -1,0 +1,8 @@
+model: ssl_finetune
+criterion: ctc
+feat_size: 1024
+hidden_size: 1024
+ssl: xlsr
+ssl_feature: hidden_states
+langs: ['eng']
+input_size: 40
